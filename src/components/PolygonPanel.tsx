@@ -1,6 +1,7 @@
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography, Paper, Box, Alert } from "@mui/material";
 import type { Polygon } from "../types/polygon.type";
 import { serverApi } from "../api/api";
+import { useState } from "react";
 
 type Props = {
   isDrawing: boolean;
@@ -10,39 +11,42 @@ type Props = {
 };
 
 const PolygonPanel = ({ isDrawing, setIsDrawing, polygons, setPolygons }: Props) => {
-  // console.log("Saving polygons:", polygons);
- const handleSave = async () => {
-  // console.log("Saving polygons:", polygons);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  try {
-    const newPolygons = polygons.filter((p) => p.id.startsWith("local-")); // 👈 מזהה זמני אמיתי
+  const handleSave = async () => {
+    try {
+      setSaveStatus("saving");
+      const newPolygons = polygons.filter((p) => p.id.startsWith("local-"));
 
-    if (!newPolygons.length) {
-      console.log("אין פוליגונים חדשים לשמירה");
-      return;
-    }
+      if (!newPolygons.length) {
+        setSaveStatus("idle");
+        return;
+      }
 
-    const savedPolygons = await Promise.all(
-      newPolygons.map((poly) =>
-        serverApi.addPolygon({
-          name: poly.name,
-          coordinates: poly.coordinates,
+      const savedPolygons = await Promise.all(
+        newPolygons.map((poly) =>
+          serverApi.addPolygon({
+            name: poly.name,
+            coordinates: poly.coordinates,
+          })
+        )
+      );
+
+      setPolygons((prev) =>
+        prev.map((p) => {
+          const saved = savedPolygons.find((sp) => sp.name === p.name);
+          return saved ? { ...p, id: saved.id } : p;
         })
-      )
-    );
+      );
 
-    setPolygons((prev) =>
-      prev.map((p) => {
-        const saved = savedPolygons.find((sp) => sp.name === p.name);
-        return saved ? { ...p, id: saved.id } : p;
-      })
-    );
-
-    console.log("Polygons saved:", savedPolygons);
-  } catch (err) {
-    console.error("Error saving polygons:", err);
-  }
-};
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      console.error("Error saving polygons:", err);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  };
 
   const handleDelete = async () => {
     if (!polygons.length) return;
@@ -55,30 +59,101 @@ const PolygonPanel = ({ isDrawing, setIsDrawing, polygons, setPolygons }: Props)
     }
   };
 
+  const unsavedCount = polygons.filter(p => p.id.startsWith("local-")).length;
+
   return (
-    <div>
-      <Typography variant="h6" gutterBottom>
-        2 Polygon
+    <Paper sx={{ p: 1, height: "90%", display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <Typography variant="subtitle2" gutterBottom sx={{ color: "primary.main", fontWeight: "bold", fontSize: '0.9rem' }}>
+        Polygons
       </Typography>
-      <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: "wrap" }}>
+
+      {/* סטטוס שמירה */}
+      {saveStatus === "saving" && (
+        <Alert severity="info" sx={{ mb: 0.5, py: 0.3, fontSize: '0.7rem' }}>
+          Saving...
+        </Alert>
+      )}
+      {saveStatus === "success" && (
+        <Alert severity="success" sx={{ mb: 0.5, py: 0.3, fontSize: '0.7rem' }}>
+          Saved!
+        </Alert>
+      )}
+      {saveStatus === "error" && (
+        <Alert severity="error" sx={{ mb: 0.5, py: 0.3, fontSize: '0.7rem' }}>
+          Error
+        </Alert>
+      )}
+
+      {/* סטטיסטיקות */}
+      <Box sx={{ mb: 1, p: 0.5, bgcolor: "grey.100", borderRadius: 0.5, fontSize: '0.7rem' }}>
+        <Typography variant="caption" display="block" fontSize="inherit">
+          Total: {polygons.length}
+        </Typography>
+        <Typography variant="caption" display="block" fontSize="inherit" color={unsavedCount > 0 ? "warning.main" : "success.main"}>
+          Unsaved: {unsavedCount}
+        </Typography>
+      </Box>
+
+      {/* כפתורים */}
+      <Stack direction="row" spacing={0.3} sx={{ mt: "auto" }}>
         <Button
-          variant={!isDrawing ? "contained" : "outlined"}
+          variant={isDrawing ? "contained" : "outlined"}
+          color={isDrawing ? "warning" : "primary"}
           size="small"
           onClick={() => setIsDrawing(!isDrawing)}
-          color={!isDrawing ? "primary" : "inherit"}
+          sx={{ 
+            flex: 1, 
+            py: 0.3, 
+            fontSize: '0.65rem',
+            minWidth: 'auto',
+            minHeight: '28px'
+          }}
         >
-          {isDrawing ? "Stop Drawing" : "Start Drawing"}
+          {isDrawing ? "Stop" : "Draw"}
         </Button>
 
-        <Button variant="contained" color="success" size="small" onClick={handleSave}>
+        <Button
+          variant="contained"
+          color="success"
+          size="small"
+          onClick={handleSave}
+          disabled={unsavedCount === 0 || saveStatus === "saving"}
+          sx={{ 
+            flex: 1, 
+            py: 0.3, 
+            fontSize: '0.65rem',
+            minWidth: 'auto',
+            minHeight: '28px'
+          }}
+        >
           Save
         </Button>
 
-        <Button variant="outlined" color="error" size="small" onClick={handleDelete}>
+        <Button
+          variant="outlined"
+          color="error"
+          size="small"
+          onClick={handleDelete}
+          disabled={polygons.length === 0}
+          sx={{ 
+            flex: 1, 
+            py: 0.3, 
+            fontSize: '0.65rem',
+            minWidth: 'auto',
+            minHeight: '28px'
+          }}
+        >
           Delete
         </Button>
       </Stack>
-    </div>
+
+      {/* הוראות */}
+      {isDrawing && (
+        <Alert severity="info" sx={{ mt: 0.5, py: 0.2, fontSize: '0.6rem' }}>
+          Click map to draw polygon
+        </Alert>
+      )}
+    </Paper>
   );
 };
 

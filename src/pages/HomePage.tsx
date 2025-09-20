@@ -51,7 +51,6 @@ const HomePage = () => {
     };
 
     fetchData();
-    
   }, []);
 
   return (
@@ -173,14 +172,9 @@ const HomePage = () => {
           <MapDataTable
             polygons={polygons}
             objects={objects}
-            onDeleteObject={(id) => {
-              // מחיקת אובייקט
-              setObjects((prev) => prev.filter((obj) => obj.id !== id));
-            }}
-            onDeletePolygon={(id) => {
-              // מחיקת פוליגון
-              setPolygons((prev) => prev.filter((poly) => poly.id !== id));
-            }}
+            
+            setObjects={setObjects}
+            setPolygons={setPolygons}
           />{" "}
         </Paper>
       </div>

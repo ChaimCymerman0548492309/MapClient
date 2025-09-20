@@ -95,7 +95,7 @@ const ObjectsPanel = ({
     <Paper
       sx={{
         p: 1,
-        height: "100%",
+        height: "90%",
         display: "flex",
         flexDirection: "column",
         minHeight: 0,
