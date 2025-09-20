@@ -93,88 +93,116 @@ const ObjectsPanel = ({
 
   return (
     <Paper
-      sx={{ 
-        p: 1.5, 
-        height: "100%", 
-        display: "flex", 
+      sx={{
+        p: 1,
+        height: "100%",
+        display: "flex",
         flexDirection: "column",
-        minHeight: 0
+        minHeight: 0,
+        overflow: "hidden",
       }}
     >
       <Typography
-        variant="subtitle1"
+        variant="subtitle2"
         gutterBottom
-        sx={{ color: "primary.main", fontWeight: "bold", fontSize: '1rem' }}
+        sx={{
+          color: "primary.main",
+          fontWeight: "bold",
+          fontSize: "0.9rem",
+          mb: 0.5,
+        }}
       >
-        🎯 Objects
+        Objects
       </Typography>
 
       {/* סטטוס שמירה */}
       {saveStatus === "saving" && (
-        <Alert severity="info" sx={{ mb: 1, py: 0.5 }}>
+        <Alert severity="info" sx={{ mb: 0.5, py: 0.3, fontSize: "0.7rem" }}>
           Saving...
         </Alert>
       )}
       {saveStatus === "success" && (
-        <Alert severity="success" sx={{ mb: 1, py: 0.5 }}>
+        <Alert severity="success" sx={{ mb: 0.5, py: 0.3, fontSize: "0.7rem" }}>
           Saved!
         </Alert>
       )}
       {saveStatus === "error" && (
-        <Alert severity="error" sx={{ mb: 1, py: 0.5 }}>
+        <Alert severity="error" sx={{ mb: 0.5, py: 0.3, fontSize: "0.7rem" }}>
           Error
         </Alert>
       )}
 
       {/* סטטיסטיקות */}
-      <Box sx={{ mb: 1.5, p: 0.8, bgcolor: "grey.100", borderRadius: 1 }}>
-        <Typography variant="caption" display="block">
-          📊 Total: {objects.length}
+      <Box
+        sx={{
+          mb: 1,
+          p: 0.5,
+          bgcolor: "grey.100",
+          borderRadius: 0.5,
+          fontSize: "0.7rem",
+        }}
+      >
+        <Typography variant="caption" display="block" fontSize="inherit">
+          Total: {objects.length}
         </Typography>
         <Typography
           variant="caption"
           display="block"
+          fontSize="inherit"
           color={unsavedCount > 0 ? "warning.main" : "success.main"}
         >
-          💾 Unsaved: {unsavedCount}
+          Unsaved: {unsavedCount}
         </Typography>
       </Box>
 
       {/* בחירת סוג אובייקט */}
-      <Typography variant="caption" display="block" gutterBottom>
-        Select Type:
+      <Typography
+        variant="caption"
+        display="block"
+        gutterBottom
+        fontSize="0.7rem"
+      >
+        Type:
       </Typography>
-    <Select
-  fullWidth
-  size="small"
-  value={objectType}
-  onChange={(e) => setObjectType(e.target.value)}   // 👈 חייב לעדכן את ה־state
-  sx={{ mb: 1.5, fontSize: '0.8rem', height: '32px' }}
->
-  <MenuItem value="Marker">📍 Marker</MenuItem>
-  <MenuItem value="Jeep">🚙 Jeep</MenuItem>
-  <MenuItem value="Ship">🚢 Ship</MenuItem>
-  <MenuItem value="Plane">✈️ Plane</MenuItem>
-  <MenuItem value="Tree">🌳 Tree</MenuItem>
-  <MenuItem value="Building">🏢 Building</MenuItem>
-</Select>
-
+      <Select
+        fullWidth
+        size="small"
+        value={objectType}
+        onChange={(e) => setObjectType(e.target.value)}
+        sx={{
+          mb: 1,
+          fontSize: "0.7rem",
+          height: "28px",
+          "& .MuiSelect-select": {
+            padding: "4px 8px",
+            fontSize: "0.7rem",
+          },
+        }}
+      >
+        <MenuItem value="Marker">📍 Marker</MenuItem>
+        <MenuItem value="Jeep">🚙 Jeep</MenuItem>
+        <MenuItem value="Ship">🚢 Ship</MenuItem>
+        <MenuItem value="Plane">✈️ Plane</MenuItem>
+        <MenuItem value="Tree">🌳 Tree</MenuItem>
+        <MenuItem value="Building">🏢 Building</MenuItem>
+      </Select>
 
       {/* כפתורים בשורה אחת */}
-      <Stack direction="row" spacing={0.5} sx={{ mt: "auto" }}>
+      <Stack direction="row" spacing={0.3} sx={{ mt: "auto" }}>
         <Button
           variant={isAdding ? "contained" : "outlined"}
           color={isAdding ? "warning" : "primary"}
           size="small"
           onClick={handleAdd}
-          sx={{ 
-            flex: 1, 
-            py: 0.5, 
-            fontSize: '0.7rem',
-            minWidth: 'auto'
+          sx={{
+            flex: 1,
+            py: 0.3,
+            fontSize: "0.65rem",
+            minWidth: "auto",
+            minHeight: "28px",
           }}
         >
-          {isAdding ? "🖱️" : "➕"}
+          {isAdding ? "Stop Adding" : "Add Object"}{" "}
         </Button>
 
         <Button
@@ -183,14 +211,15 @@ const ObjectsPanel = ({
           size="small"
           onClick={handleSave}
           disabled={unsavedCount === 0 || saveStatus === "saving"}
-          sx={{ 
-            flex: 1, 
-            py: 0.5, 
-            fontSize: '0.7rem',
-            minWidth: 'auto'
+          sx={{
+            flex: 1,
+            py: 0.3,
+            fontSize: "0.65rem",
+            minWidth: "auto",
+            minHeight: "28px",
           }}
         >
-          💾
+          Save
         </Button>
 
         <Button
@@ -199,20 +228,31 @@ const ObjectsPanel = ({
           size="small"
           onClick={handleDelete}
           disabled={objects.length === 0}
-          sx={{ 
-            flex: 1, 
-            py: 0.5, 
-            fontSize: '0.7rem',
-            minWidth: 'auto'
+          sx={{
+            flex: 1,
+            py: 0.3,
+            fontSize: "0.65rem",
+            minWidth: "auto",
+            minHeight: "28px",
           }}
         >
-          🗑️
+          Delete
         </Button>
       </Stack>
 
       {/* הוראות */}
       {isAdding && (
-        <Alert severity="info" sx={{ mt: 1, py: 0.5, fontSize: '0.7rem' }}>
+        <Alert
+          severity="info"
+          sx={{
+            mt: 0.5,
+            py: 0.2,
+            fontSize: "0.6rem",
+            "& .MuiAlert-message": {
+              padding: "2px 0",
+            },
+          }}
+        >
           Click map for {objectType.toLowerCase()}
         </Alert>
       )}
