@@ -10,9 +10,9 @@ type Props = {
 };
 
 const PolygonPanel = ({ isDrawing, setIsDrawing, polygons, setPolygons }: Props) => {
-  console.log("Saving polygons:", polygons);
+  // console.log("Saving polygons:", polygons);
  const handleSave = async () => {
-  console.log("Saving polygons:", polygons);
+  // console.log("Saving polygons:", polygons);
 
   try {
     const newPolygons = polygons.filter((p) => p.id.startsWith("local-")); // 👈 מזהה זמני אמיתי

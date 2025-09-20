@@ -1,24 +1,23 @@
 import { Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { serverApi } from "../api/api";
-import MapView from "../components/MapView";
-import type { MapObject, MapObjectApiResponse } from "../types/object.type";
-import type { Polygon, PolygonApiResponse } from "../types/polygon.type";
-// import ObjectsPanel from "../components/ObjectsPanel";
-// import { mapPolygonApiResponseToPolygon } from "../assets/mapper";
 import MapDataTable from "../components/MapDataTable";
+import MapView from "../components/MapView";
 import ObjectsPanel from "../components/ObjectsPanel";
 import PolygonPanel from "../components/PolygonPanel";
+import type { MapObject, MapObjectApiResponse } from "../types/object.type";
+import type { Polygon, PolygonApiResponse } from "../types/polygon.type";
 
 const HomePage = () => {
   const [polygons, setPolygons] = useState<Polygon[]>([]);
   const [objects, setObjects] = useState<MapObject[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isAddingObject, setIsAddingObject] = useState(false);
+  const [objectType, setObjectType] = useState("Marker");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // ---- POLYGONS ----
         // ---- POLYGONS ----
         const polyRes: PolygonApiResponse[] = await serverApi.getPolygons();
         setPolygons(
@@ -33,20 +32,6 @@ const HomePage = () => {
             ],
           }))
         );
-
-        // const polyRes: PolygonApiResponse[] = await serverApi.getPolygons();
-        // setPolygons(polyRes.map(mapPolygonApiResponseToPolygon));
-        // setPolygons(
-        //   polyRes.map((p) => ({
-        //     id: p.id,
-        //     name: p.name,
-        //     coordinates: [
-        //       p.geometry.coordinates.exterior.positions.map(
-        //         (pos) => pos.values
-        //       ),
-        //     ],
-        //   }))
-        // );
 
         // ---- OBJECTS ----
         const objRes: MapObjectApiResponse[] = await serverApi.getObjects();
@@ -66,6 +51,7 @@ const HomePage = () => {
     };
 
     fetchData();
+    
   }, []);
 
   return (
@@ -109,11 +95,16 @@ const HomePage = () => {
               polygons={polygons}
               objects={objects}
               isDrawing={isDrawing}
+              isAddingObject={isAddingObject}
+              objectType={objectType}
               onFinishPolygon={(poly) => {
                 setPolygons((prev) => [...prev, poly]);
-                setIsDrawing(false); // יציאה ממצב ציור
+                setIsDrawing(false);
               }}
-            />{" "}
+              onAddObject={(obj) => {
+                setObjects((prev) => [...prev, obj]);
+              }}
+            />
           </div>
         </Paper>
       </div>
@@ -128,13 +119,14 @@ const HomePage = () => {
           flexDirection: "column",
         }}
       >
-        {/* Polygon Panel */}
+        {/* Polygon Panel - גובה יחסי 1 */}
         <Paper
           sx={{
             flex: 1,
             borderBottom: "1px solid black",
             p: 1,
             borderRadius: 0,
+            minHeight: 0, // חשוב לגמישות
           }}
         >
           <PolygonPanel
@@ -145,31 +137,51 @@ const HomePage = () => {
           />
         </Paper>
 
-        {/* Objects Panel */}
+        {/* Objects Panel - גובה יחסי 1 */}
         <Paper
           sx={{
             flex: 1,
             borderBottom: "1px solid black",
             p: 1,
             borderRadius: 0,
+            minHeight: 0, // חשוב לגמישות
           }}
         >
-          <ObjectsPanel />
+          <ObjectsPanel
+            objects={objects}
+            setObjects={setObjects}
+            isAdding={isAddingObject}
+            setIsAdding={setIsAddingObject}
+            objectType={objectType}
+            setObjectType={setObjectType}
+          />
         </Paper>
 
-        {/* Map Data Panel */}
+        {/* Map Data Panel - גובה יחסי 2 */}
         <Paper
           sx={{
             flex: 2,
             p: 1,
             overflow: "auto",
             borderRadius: 0,
+            minHeight: 0, // חשוב לגמישות
           }}
         >
           <Typography variant="h6" sx={{ mb: 1 }}>
-            4 Map Data
+            {/* 4 Map Data */}
           </Typography>
-          <MapDataTable polygons={polygons} objects={objects} />
+          <MapDataTable
+            polygons={polygons}
+            objects={objects}
+            onDeleteObject={(id) => {
+              // מחיקת אובייקט
+              setObjects((prev) => prev.filter((obj) => obj.id !== id));
+            }}
+            onDeletePolygon={(id) => {
+              // מחיקת פוליגון
+              setPolygons((prev) => prev.filter((poly) => poly.id !== id));
+            }}
+          />{" "}
         </Paper>
       </div>
     </div>
