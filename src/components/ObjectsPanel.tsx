@@ -1,7 +1,16 @@
+import {
+  Alert,
+  Box,
+  Button,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useState } from "react";
-import { Button, Stack, Typography, Select, MenuItem, Paper, Box, Alert } from "@mui/material";
-import type { MapObject } from "../types/object.type";
 import { serverApi } from "../api/api";
+import type { MapObject } from "../types/object.type";
 
 type Props = {
   objects: MapObject[];
@@ -28,7 +37,9 @@ const ObjectsPanel = ({
   setDeletedObjects,
   deletedObjects,
 }: Props) => {
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "success" | "error"
+  >("idle");
 
   const handleAddToggle = () => {
     if (isAdding) {
@@ -66,11 +77,12 @@ const ObjectsPanel = ({
       // 2. אובייקטים חדשים
       const objectsToSave = objects.filter((o) => o.id.startsWith("local-"));
       const savedObjects = await Promise.all(
-        objectsToSave.map(async (obj) =>
-          await serverApi.addObject({
-            type: obj.type,
-            coordinates: obj.coordinates,
-          })
+        objectsToSave.map(
+          async (obj) =>
+            await serverApi.addObject({
+              type: obj.type,
+              coordinates: obj.coordinates,
+            })
         )
       );
 
@@ -99,56 +111,85 @@ const ObjectsPanel = ({
   const totalPending = unsavedNew + pendingDeletes;
 
   return (
-    <Paper sx={{ 
-      p: 1.5, 
-      display: "flex", 
-      flexDirection: "column",
-      maxWidth: "100%",
-      overflow: "hidden",
-      boxSizing: "border-box",
-      gap: 1
-    }}>
-      <Typography variant="subtitle1" sx={{ 
-        color: "primary.main", 
-        fontWeight: "bold", 
-        fontSize: "0.9rem",
-        textAlign: "center"
-      }}>
+    <Paper
+      sx={{
+        p: 1.5,
+        display: "flex",
+        flexDirection: "column",
+        maxWidth: "100%",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        gap: 1,
+      }}
+    >
+      <Typography
+        variant="subtitle1"
+        sx={{
+          color: "primary.main",
+          fontWeight: "bold",
+          fontSize: "0.9rem",
+          textAlign: "center",
+        }}
+      >
         🎯 Objects
       </Typography>
 
       {/* סטטוס */}
-      {saveStatus === "saving" && <Alert severity="info" sx={{ py: 0.5, fontSize: '0.7rem' }}>Saving…</Alert>}
-      {saveStatus === "success" && <Alert severity="success" sx={{ py: 0.5, fontSize: '0.7rem' }}>Saved!</Alert>}
-      {saveStatus === "error" && <Alert severity="error" sx={{ py: 0.5, fontSize: '0.7rem' }}>Error</Alert>}
+      {saveStatus === "saving" && (
+        <Alert severity="info" sx={{ py: 0.5, fontSize: "0.7rem" }}>
+          Saving…
+        </Alert>
+      )}
+      {saveStatus === "success" && (
+        <Alert severity="success" sx={{ py: 0.5, fontSize: "0.7rem" }}>
+          Saved!
+        </Alert>
+      )}
+      {saveStatus === "error" && (
+        <Alert severity="error" sx={{ py: 0.5, fontSize: "0.7rem" }}>
+          Error
+        </Alert>
+      )}
 
       {/* סטטיסטיקות */}
-      <Box sx={{ 
-        p: 0.8, 
-        bgcolor: "grey.100", 
-        borderRadius: 1,
-        textAlign: "center"
-      }}>
-        <Typography variant="caption" display="block" fontSize="0.7rem">Total: {objects.length}</Typography>
-        <Typography variant="caption" display="block" color={totalPending ? "warning.main" : "success.main"} fontSize="0.7rem">
-          Pending: {totalPending}
+      <Box
+        sx={{
+          p: 0.5,
+          bgcolor: "grey.100",
+          borderRadius: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1,
+          flexWrap: "wrap",
+        }}
+      >
+        <Typography variant="caption" fontSize="0.65rem">
+          📊 Total: {objects.length}
+        </Typography>
+        <Typography
+          variant="caption"
+          color={totalPending ? "warning.main" : "success.main"}
+          fontSize="0.65rem"
+        >
+          💾 Pending: {totalPending}
         </Typography>
         {isDeletingObjects && (
-          <Alert severity="warning" sx={{ mt: 0.5, py: 0.2, fontSize: "0.65rem" }}>
-            Click icons to remove
-          </Alert>
+          <Typography variant="caption" color="warning.main" fontSize="0.65rem">
+            🗑 Click to remove
+          </Typography>
         )}
         {isAdding && (
-          <Alert severity="info" sx={{ mt: 0.5, py: 0.2, fontSize: "0.65rem" }}>
-            Click map to add
-          </Alert>
+          <Typography variant="caption" color="info.main" fontSize="0.65rem">
+            ➕ Click map to add
+          </Typography>
         )}
       </Box>
 
       {/* בחירת סוג */}
-      <Typography variant="caption" display="block" sx={{ textAlign: "center" }} fontSize="0.7rem">
+      {/* <Typography variant="caption" display="block" sx={{ textAlign: "center" }} fontSize="0.7rem">
         Select Type:
-      </Typography>
+      </Typography> */}
       <Select
         fullWidth
         size="small"
@@ -157,12 +198,24 @@ const ObjectsPanel = ({
         sx={{ fontSize: "0.7rem", height: "28px" }}
         disabled={isDeletingObjects} // disable when in delete mode
       >
-        <MenuItem value="Marker" sx={{ fontSize: "0.7rem" }}>📍 Marker</MenuItem>
-        <MenuItem value="Jeep" sx={{ fontSize: "0.7rem" }}>🚙 Jeep</MenuItem>
-        <MenuItem value="Ship" sx={{ fontSize: "0.7rem" }}>🚢 Ship</MenuItem>
-        <MenuItem value="Plane" sx={{ fontSize: "0.7rem" }}>✈️ Plane</MenuItem>
-        <MenuItem value="Tree" sx={{ fontSize: "0.7rem" }}>🌳 Tree</MenuItem>
-        <MenuItem value="Building" sx={{ fontSize: "0.7rem" }}>🏢 Building</MenuItem>
+        <MenuItem value="Marker" sx={{ fontSize: "0.7rem" }}>
+          📍 Marker
+        </MenuItem>
+        <MenuItem value="Jeep" sx={{ fontSize: "0.7rem" }}>
+          🚙 Jeep
+        </MenuItem>
+        <MenuItem value="Ship" sx={{ fontSize: "0.7rem" }}>
+          🚢 Ship
+        </MenuItem>
+        <MenuItem value="Plane" sx={{ fontSize: "0.7rem" }}>
+          ✈️ Plane
+        </MenuItem>
+        <MenuItem value="Tree" sx={{ fontSize: "0.7rem" }}>
+          🌳 Tree
+        </MenuItem>
+        <MenuItem value="Building" sx={{ fontSize: "0.7rem" }}>
+          🏢 Building
+        </MenuItem>
       </Select>
 
       {/* כפתורים בשורה אחת */}
@@ -172,15 +225,15 @@ const ObjectsPanel = ({
           color={isAdding ? "warning" : "primary"}
           size="small"
           onClick={handleAddToggle}
-          sx={{ 
-            fontSize: '0.65rem',
-            minWidth: 'auto',
+          sx={{
+            fontSize: "0.65rem",
+            minWidth: "auto",
             px: 0.5,
-            flex: 1
+            flex: 1,
           }}
           disabled={isDeletingObjects} // disable when in delete mode
         >
-          {isAdding ? "Cancel" : "Add"}
+          {isAdding ? "Cancel Add Mode" : "Add Mode"}
         </Button>
 
         <Button
@@ -188,15 +241,15 @@ const ObjectsPanel = ({
           color={isDeletingObjects ? "error" : "error"}
           size="small"
           onClick={handleDeleteModeToggle}
-          sx={{ 
-            fontSize: '0.65rem',
-            minWidth: 'auto',
+          sx={{
+            fontSize: "0.65rem",
+            minWidth: "auto",
             px: 0.5,
-            flex: 1
+            flex: 1,
           }}
           disabled={objects.length === 0 || isAdding} // disable when no objects or in add mode
         >
-          {isDeletingObjects ? "Cancel" : "Delete"}
+          {isDeletingObjects ? "Cancel Delete Mode" : "Delete Mode"}
         </Button>
 
         <Button
@@ -205,11 +258,11 @@ const ObjectsPanel = ({
           size="small"
           onClick={handleSave}
           disabled={totalPending === 0 || saveStatus === "saving"}
-          sx={{ 
-            fontSize: '0.65rem',
-            minWidth: 'auto',
+          sx={{
+            fontSize: "0.65rem",
+            minWidth: "auto",
             px: 0.5,
-            flex: 1
+            flex: 1,
           }}
         >
           {saveStatus === "saving" ? "..." : `Save (${totalPending})`}
