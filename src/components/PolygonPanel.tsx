@@ -7,7 +7,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect, useRef, useState } from "react"; // 👈 הוסף useRef ו-useEffect
+import { useEffect, useRef, useState } from "react";
 import { serverApi } from "../api/api";
 import type { Polygon } from "../types/polygon.type";
 
@@ -19,8 +19,8 @@ type Props = {
   setPolygons: React.Dispatch<React.SetStateAction<Polygon[]>>;
   isEditing: boolean;
   setIsEditing: (val: boolean) => void;
-  editedPolygons: Set<string>; // 👈 חדש - קבל את רשימת הפוליגונים שעודכנו
-  setEditedPolygons: React.Dispatch<React.SetStateAction<Set<string>>>; // 👈 חדש
+  editedPolygons: Set<string>;
+  setEditedPolygons: React.Dispatch<React.SetStateAction<Set<string>>>;
   isDeleting: boolean;
   setIsDeleting: (val: boolean) => void;
   setDeletedPolygons: React.Dispatch<React.SetStateAction<Set<string>>>;
@@ -40,15 +40,14 @@ const PolygonPanel = ({
   isDeleting,
   setIsDeleting,
 }: Props) => {
-  // console.log("🚀 ~ PolygonPanel ~ deletedPoly‚gons:", deletedPolygons);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "success" | "error"
   >("idle");
-  const previousPolygonsRef = useRef<Polygon[]>([]); // 👈 שמור עותק להשוואה
+  const previousPolygonsRef = useRef<Polygon[]>([]);
 
   useEffect(() => {
     if (previousPolygonsRef.current.length === 0) {
-      previousPolygonsRef.current = polygons;
+      previousPolygonsRef.current = [...polygons]; // 🔥 עותק עמוק
       return;
     }
 
@@ -72,7 +71,7 @@ const PolygonPanel = ({
       setEditedPolygons(newEdited);
     }
 
-    previousPolygonsRef.current = polygons;
+    previousPolygonsRef.current = [...polygons]; // 🔥 עותק עמוק
   }, [polygons, setEditedPolygons, editedPolygons]);
 
   const handleSave = async () => {
@@ -86,51 +85,73 @@ const PolygonPanel = ({
         }
       }
 
-      // 2. פוליגונים חדשים / מעודכנים
-      const polygonsToSave = polygons.filter(
-        (p) => p.id.startsWith("local-") || editedPolygons.has(p.id)
+      // 2. פוליגונים חדשים
+      const newPolygons = polygons.filter((p) => p.id.startsWith("local-"));
+      const savedNewPolygons = await Promise.all(
+        newPolygons.map(async (poly) => 
+          await serverApi.addPolygon({
+            name: poly.name,
+            coordinates: poly.coordinates,
+          })
+        )
       );
 
-      const savedPolygons = await Promise.all(
-        polygonsToSave.map(async (poly) => {
-          if (poly.id.startsWith("local-")) {
-            return await serverApi.addPolygon({
-              name: poly.name,
-              coordinates: poly.coordinates,
-            });
-          } else {
-            await serverApi.deletePolygon(poly.id);
-            const newPoly = await serverApi.addPolygon({
-              name: poly.name,
-              coordinates: poly.coordinates,
-            });
+      // 3. פוליגונים מעודכנים (לא חדשים)
+      const editedExistingPolygons = polygons.filter(
+        (p) => !p.id.startsWith("local-") && editedPolygons.has(p.id)
+      );
 
-            // 👇 מחק את הישן מהסטייט
-            setPolygons((prev) => prev.filter((p) => p.id !== poly.id));
-
-            return newPoly;
-          }
+      const savedEditedPolygons = await Promise.all(
+        editedExistingPolygons.map(async (poly) => {
+          // מחק את הישן
+          await serverApi.deletePolygon(poly.id);
+          // צור חדש
+          return await serverApi.addPolygon({
+            name: poly.name,
+            coordinates: poly.coordinates,
+          });
         })
       );
 
-      // עדכון state
-      setPolygons((prev) => {
-        const updated = [...prev];
+      console.log("🚀 ~ handleSave ~ savedNewPolygons:", savedNewPolygons);
+      console.log("🚀 ~ handleSave ~ savedEditedPolygons:", savedEditedPolygons);
 
-        for (const saved of savedPolygons) {
-          const idx = updated.findIndex((p) => p.name === saved.name);
-          if (idx >= 0) {
-            updated[idx] = { ...updated[idx], id: saved.id };
-          } else {
-            updated.push(saved);
+      // 🔥 עדכון state בצורה נכונה
+      setPolygons((prev) => {
+        // התחל עם פוליגונים שלא נערכו ולא נמחקו
+        const updated = prev.filter(
+          (p) => 
+            !p.id.startsWith("local-") && 
+            !editedPolygons.has(p.id) && 
+            !deletedPolygons.has(p.id)
+        );
+
+        // הוסף את החדשים עם ID מהשרת
+        for (let i = 0; i < newPolygons.length; i++) {
+          if (savedNewPolygons[i]) {
+            updated.push(savedNewPolygons[i]);
+          }
+        }
+
+        // הוסף את הנערכים עם ID חדש מהשרת
+        for (let i = 0; i < editedExistingPolygons.length; i++) {
+          if (savedEditedPolygons[i]) {
+            updated.push(savedEditedPolygons[i]);
           }
         }
 
         return updated;
       });
 
+      // 🔥 נקה את כל הסטטוסים
       setEditedPolygons(new Set());
-      setDeletedPolygons(new Set()); // 👈 נקה מחיקות אחרי שמירה
+      setDeletedPolygons(new Set());
+      
+      // 🔥 עדכן את הרפרנס
+      setTimeout(() => {
+        previousPolygonsRef.current = [...polygons];
+      }, 100);
+
       setSaveStatus("success");
       setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (err) {
@@ -140,26 +161,6 @@ const PolygonPanel = ({
     }
   };
 
-  // const handleDelete = async () => {
-  //   if (!polygons.length) return;
-  //   const lastPoly = polygons[polygons.length - 1];
-  //   try {
-  //     if (!lastPoly.id.startsWith("local-")) {
-  //       await serverApi.deletePolygon(lastPoly.id);
-  //     }
-  //     setPolygons((prev) => prev.filter((p) => p.id !== lastPoly.id));
-
-  //     // הסר מהרשימה אם נמחק
-  //     if (editedPolygons.has(lastPoly.id)) {
-  //       const newEdited = new Set(editedPolygons);
-  //       newEdited.delete(lastPoly.id);
-  //       setEditedPolygons(newEdited);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error deleting polygon:", err);
-  //   }
-  // };
-
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
     if (isDrawing) {
@@ -167,12 +168,11 @@ const PolygonPanel = ({
     }
   };
 
-  // const unsavedCount = polygons.filter((p) => p.id.startsWith("local-")).length;
-  // const totalUnsaved = unsavedCount + editedPolygons.size; // 👈 סך הכל לא שמור
-  const totalUnsaved =
-    polygons.filter((p) => p.id.startsWith("local-")).length +
-    editedPolygons.size +
-    deletedPolygons.size;
+  // 🔥 חישוב נכון של unsaved
+  const newPolygonsCount = polygons.filter((p) => p.id.startsWith("local-")).length;
+  const editedPolygonsCount = editedPolygons.size;
+  const deletedPolygonsCount = deletedPolygons.size;
+  const totalUnsaved = newPolygonsCount + editedPolygonsCount + deletedPolygonsCount;
 
   return (
     <Paper
@@ -242,14 +242,34 @@ const PolygonPanel = ({
         >
           Unsaved: {totalUnsaved}
         </Typography>
-        {editedPolygons.size > 0 && (
+        {newPolygonsCount > 0 && (
+          <Typography
+            variant="caption"
+            display="block"
+            fontSize="inherit"
+            color="info.main"
+          >
+            New: {newPolygonsCount}
+          </Typography>
+        )}
+        {editedPolygonsCount > 0 && (
           <Typography
             variant="caption"
             display="block"
             fontSize="inherit"
             color="warning.main"
           >
-            Edited: {editedPolygons.size}
+            Edited: {editedPolygonsCount}
+          </Typography>
+        )}
+        {deletedPolygonsCount > 0 && (
+          <Typography
+            variant="caption"
+            display="block"
+            fontSize="inherit"
+            color="error.main"
+          >
+            Deleted: {deletedPolygonsCount}
           </Typography>
         )}
         {isEditing && (
@@ -277,7 +297,7 @@ const PolygonPanel = ({
             minHeight: "28px",
           }}
         >
-          {isDrawing ? "Stop" : "Draw"}
+          {isDrawing ? "Stop Draw Mode" : "Draw Mode"}
         </Button>
 
         <Button
@@ -293,12 +313,9 @@ const PolygonPanel = ({
             minHeight: "28px",
           }}
         >
-          {isEditing ? "Stop Edit" : "Edit"}
+          {isEditing ? "Stop Edit Mode" : "Edit Mode"}
         </Button>
-      </Stack>
-
-      {/* כפתורים - שורה שנייה */}
-      <Stack direction="row" spacing={0.3} sx={{ mt: "auto" }}>
+   
         <Button
           variant="contained"
           color="success"
@@ -332,7 +349,7 @@ const PolygonPanel = ({
             minHeight: "28px",
           }}
         >
-          {isDeleting ? "Cancel Delete" : "Delete"}
+          {isDeleting ? "Cancel Delete Mode" : "Delete Mode"}
         </Button>
       </Stack>
 

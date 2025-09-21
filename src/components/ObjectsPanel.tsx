@@ -10,11 +10,10 @@ type Props = {
   setIsAdding: (val: boolean) => void;
   objectType: string;
   setObjectType: (val: string) => void;
-  // 👇 חדשים
   isDeletingObjects: boolean;
   setIsDeletingObjects: (val: boolean) => void;
   deletedObjects: Set<string>;
-  setDeletedObjects :  React.Dispatch<React.SetStateAction<Set<string>>>
+  setDeletedObjects: React.Dispatch<React.SetStateAction<Set<string>>>;
 };
 
 const ObjectsPanel = ({
@@ -26,54 +25,73 @@ const ObjectsPanel = ({
   setObjectType,
   isDeletingObjects,
   setIsDeletingObjects,
-  setDeletedObjects ,
+  setDeletedObjects,
   deletedObjects,
 }: Props) => {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
-  const handleAddToggle = () => setIsAdding(!isAdding);
-  const handleDeleteModeToggle = () => setIsDeletingObjects(!isDeletingObjects);
-
-const handleSave = async () => {
-  try {
-    setSaveStatus("saving");
-
-    // 1. מחיקות
-    for (const id of deletedObjects) {
-      if (!id.startsWith("local-")) {
-        await serverApi.deleteObject(id);
-      }
+  const handleAddToggle = () => {
+    if (isAdding) {
+      // אם כבר במוד הוספה - כבה
+      setIsAdding(false);
+    } else {
+      // אם לא במוד הוספה - הדלק וכבה מחיקה
+      setIsAdding(true);
+      setIsDeletingObjects(false);
     }
+  };
 
-    // 2. אובייקטים חדשים
-    const objectsToSave = objects.filter((o) => o.id.startsWith("local-"));
-    const savedObjects = await Promise.all(
-      objectsToSave.map(async (obj) =>
-        await serverApi.addObject({
-          type: obj.type,
-          coordinates: obj.coordinates,
+  const handleDeleteModeToggle = () => {
+    if (isDeletingObjects) {
+      // אם כבר במוד מחיקה - כבה
+      setIsDeletingObjects(false);
+    } else {
+      // אם לא במוד מחיקה - הדלק וכבה הוספה
+      setIsDeletingObjects(true);
+      setIsAdding(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaveStatus("saving");
+
+      // 1. מחיקות
+      for (const id of deletedObjects) {
+        if (!id.startsWith("local-")) {
+          await serverApi.deleteObject(id);
+        }
+      }
+
+      // 2. אובייקטים חדשים
+      const objectsToSave = objects.filter((o) => o.id.startsWith("local-"));
+      const savedObjects = await Promise.all(
+        objectsToSave.map(async (obj) =>
+          await serverApi.addObject({
+            type: obj.type,
+            coordinates: obj.coordinates,
+          })
+        )
+      );
+
+      // עדכון ה־IDs
+      setObjects((prev) =>
+        prev.map((o) => {
+          const saved = savedObjects.find((so) => so.type === o.type);
+          return saved ? { ...o, id: saved.id } : o;
         })
-      )
-    );
+      );
 
-    // עדכון ה־IDs
-    setObjects((prev) =>
-      prev.map((o) => {
-        const saved = savedObjects.find((so) => so.type === o.type);
-        return saved ? { ...o, id: saved.id } : o;
-      })
-    );
-
-    // ✅ נקה גם מחיקות וגם "חדשים לא שמורים"
-    setDeletedObjects(new Set());
-    setSaveStatus("success");
-    setTimeout(() => setSaveStatus("idle"), 3000);
-  } catch (err) {
-    console.error("Error saving objects:", err);
-    setSaveStatus("error");
-    setTimeout(() => setSaveStatus("idle"), 3000);
-  }
-};
+      // נקה גם מחיקות וגם "חדשים לא שמורים"
+      setDeletedObjects(new Set());
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      console.error("Error saving objects:", err);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  };
 
   // סטטיסטיקות לשורת מצב
   const unsavedNew = objects.filter((o) => o.id.startsWith("local-")).length;
@@ -81,36 +99,54 @@ const handleSave = async () => {
   const totalPending = unsavedNew + pendingDeletes;
 
   return (
-    <Paper
-    //  sx={{ p: 1.5, height: "90%", display: "flex", flexDirection: "column" }}
-     >
-      <Typography variant="subtitle1" gutterBottom sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}>
+    <Paper sx={{ 
+      p: 1.5, 
+      display: "flex", 
+      flexDirection: "column",
+      maxWidth: "100%",
+      overflow: "hidden",
+      boxSizing: "border-box",
+      gap: 1
+    }}>
+      <Typography variant="subtitle1" sx={{ 
+        color: "primary.main", 
+        fontWeight: "bold", 
+        fontSize: "0.9rem",
+        textAlign: "center"
+      }}>
         🎯 Objects
       </Typography>
 
       {/* סטטוס */}
-      {saveStatus === "saving" && <Alert severity="info" sx={{ mb: 1, py: 0.5 }}>Saving…</Alert>}
-      {saveStatus === "success" && <Alert severity="success" sx={{ mb: 1, py: 0.5 }}>Saved!</Alert>}
-      {saveStatus === "error" && <Alert severity="error" sx={{ mb: 1, py: 0.5 }}>Error</Alert>}
+      {saveStatus === "saving" && <Alert severity="info" sx={{ py: 0.5, fontSize: '0.7rem' }}>Saving…</Alert>}
+      {saveStatus === "success" && <Alert severity="success" sx={{ py: 0.5, fontSize: '0.7rem' }}>Saved!</Alert>}
+      {saveStatus === "error" && <Alert severity="error" sx={{ py: 0.5, fontSize: '0.7rem' }}>Error</Alert>}
 
       {/* סטטיסטיקות */}
-      <Box sx={{ mb: 1.5, p: 0.8, bgcolor: "grey.100", borderRadius: 1 }}>
-        <Typography variant="caption" display="block">📊 Total: {objects.length}</Typography>
-        <Typography variant="caption" display="block" color={totalPending ? "warning.main" : "success.main"}>
-          💾 Pending: {totalPending} &nbsp;
-          <span style={{ color: "#888" }}>
-            (new: {unsavedNew}, delete: {pendingDeletes})
-          </span>
+      <Box sx={{ 
+        p: 0.8, 
+        bgcolor: "grey.100", 
+        borderRadius: 1,
+        textAlign: "center"
+      }}>
+        <Typography variant="caption" display="block" fontSize="0.7rem">Total: {objects.length}</Typography>
+        <Typography variant="caption" display="block" color={totalPending ? "warning.main" : "success.main"} fontSize="0.7rem">
+          Pending: {totalPending}
         </Typography>
         {isDeletingObjects && (
-          <Alert severity="warning" sx={{ mt: 1, py: 0.3, fontSize: "0.75rem" }}>
-            Delete mode: click icons on the map to remove
+          <Alert severity="warning" sx={{ mt: 0.5, py: 0.2, fontSize: "0.65rem" }}>
+            Click icons to remove
+          </Alert>
+        )}
+        {isAdding && (
+          <Alert severity="info" sx={{ mt: 0.5, py: 0.2, fontSize: "0.65rem" }}>
+            Click map to add
           </Alert>
         )}
       </Box>
 
       {/* בחירת סוג */}
-      <Typography variant="caption" display="block" gutterBottom>
+      <Typography variant="caption" display="block" sx={{ textAlign: "center" }} fontSize="0.7rem">
         Select Type:
       </Typography>
       <Select
@@ -118,37 +154,49 @@ const handleSave = async () => {
         size="small"
         value={objectType}
         onChange={(e) => setObjectType(e.target.value)}
-        sx={{ mb: 1.5, fontSize: "0.8rem", height: "32px" }}
+        sx={{ fontSize: "0.7rem", height: "28px" }}
+        disabled={isDeletingObjects} // disable when in delete mode
       >
-        <MenuItem value="Marker" sx={{ fontSize: "0.8rem" }}>📍 Marker</MenuItem>
-        <MenuItem value="Jeep" sx={{ fontSize: "0.8rem" }}>🚙 Jeep</MenuItem>
-        <MenuItem value="Ship" sx={{ fontSize: "0.8rem" }}>🚢 Ship</MenuItem>
-        <MenuItem value="Plane" sx={{ fontSize: "0.8rem" }}>✈️ Plane</MenuItem>
-        <MenuItem value="Tree" sx={{ fontSize: "0.8rem" }}>🌳 Tree</MenuItem>
-        <MenuItem value="Building" sx={{ fontSize: "0.8rem" }}>🏢 Building</MenuItem>
+        <MenuItem value="Marker" sx={{ fontSize: "0.7rem" }}>📍 Marker</MenuItem>
+        <MenuItem value="Jeep" sx={{ fontSize: "0.7rem" }}>🚙 Jeep</MenuItem>
+        <MenuItem value="Ship" sx={{ fontSize: "0.7rem" }}>🚢 Ship</MenuItem>
+        <MenuItem value="Plane" sx={{ fontSize: "0.7rem" }}>✈️ Plane</MenuItem>
+        <MenuItem value="Tree" sx={{ fontSize: "0.7rem" }}>🌳 Tree</MenuItem>
+        <MenuItem value="Building" sx={{ fontSize: "0.7rem" }}>🏢 Building</MenuItem>
       </Select>
 
-      {/* כפתורים */}
-      <Stack direction="row" spacing={0.5} sx={{ mt: "auto" }}>
+      {/* כפתורים בשורה אחת */}
+      <Stack direction="row" spacing={0.5} sx={{ width: "100%" }}>
         <Button
           variant={isAdding ? "contained" : "outlined"}
           color={isAdding ? "warning" : "primary"}
           size="small"
           onClick={handleAddToggle}
-          sx={{ flex: 1 }}
+          sx={{ 
+            fontSize: '0.65rem',
+            minWidth: 'auto',
+            px: 0.5,
+            flex: 1
+          }}
+          disabled={isDeletingObjects} // disable when in delete mode
         >
-          {isAdding ? "🖱 Add on map" : "➕ Add"}
+          {isAdding ? "Cancel" : "Add"}
         </Button>
 
         <Button
           variant={isDeletingObjects ? "contained" : "outlined"}
-          color={isDeletingObjects ? "warning" : "error"}
+          color={isDeletingObjects ? "error" : "error"}
           size="small"
           onClick={handleDeleteModeToggle}
-          sx={{ flex: 1 }}
-          disabled={!objects.length}
+          sx={{ 
+            fontSize: '0.65rem',
+            minWidth: 'auto',
+            px: 0.5,
+            flex: 1
+          }}
+          disabled={objects.length === 0 || isAdding} // disable when no objects or in add mode
         >
-          {isDeletingObjects ? "Cancel" : "🗑 Delete"}
+          {isDeletingObjects ? "Cancel" : "Delete"}
         </Button>
 
         <Button
@@ -157,9 +205,14 @@ const handleSave = async () => {
           size="small"
           onClick={handleSave}
           disabled={totalPending === 0 || saveStatus === "saving"}
-          sx={{ flex: 1 }}
+          sx={{ 
+            fontSize: '0.65rem',
+            minWidth: 'auto',
+            px: 0.5,
+            flex: 1
+          }}
         >
-          💾 Save ({totalPending})
+          {saveStatus === "saving" ? "..." : `Save (${totalPending})`}
         </Button>
       </Stack>
     </Paper>

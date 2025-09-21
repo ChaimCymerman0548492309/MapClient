@@ -1,11 +1,19 @@
-import {
-  Table, TableBody, TableCell, TableHead, TableRow,
-  Typography, IconButton, Box, Chip, Tooltip
-} from "@mui/material";
 import { Delete } from "@mui/icons-material";
-import type { Polygon } from "../types/polygon.type";
-import type { MapObject } from "../types/object.type";
+import {
+  Box,
+  Chip,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { serverApi } from "../api/api";
+import type { MapObject } from "../types/object.type";
+import type { Polygon } from "../types/polygon.type";
 
 type Props = {
   polygons: Polygon[];
@@ -15,8 +23,12 @@ type Props = {
   setObjectType?: (type: string) => void; // אופציונלי
 };
 
-const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => {
-
+const MapDataTable = ({
+  polygons,
+  objects,
+  setPolygons,
+  setObjects,
+}: Props) => {
   const truncateText = (text: string, maxLength = 15) =>
     text.length <= maxLength ? text : text.substring(0, maxLength) + "...";
 
@@ -70,9 +82,15 @@ const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => 
               <TableCell sx={{ fontWeight: "bold", width: "25%" }}>
                 Name/ID
               </TableCell>
-              <TableCell sx={{ fontWeight: "bold", width: "15%" }}>Lat</TableCell>
-              <TableCell sx={{ fontWeight: "bold", width: "15%" }}>Lon</TableCell>
-              <TableCell sx={{ fontWeight: "bold", width: "10%" }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: "bold", width: "15%" }}>
+                Lat
+              </TableCell>
+              <TableCell sx={{ fontWeight: "bold", width: "15%" }}>
+                Lon
+              </TableCell>
+              <TableCell sx={{ fontWeight: "bold", width: "10%" }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
 
@@ -86,7 +104,9 @@ const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => 
                   "&:last-child td": { borderBottom: 0 },
                 }}
               >
-                <TableCell sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+                <TableCell
+                  sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
+                >
                   <Tooltip title={object.id} arrow>
                     <span>{truncateText(object.id, 12)}</span>
                   </Tooltip>
@@ -115,9 +135,9 @@ const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => 
             ))}
 
             {/* פוליגונים */}
-            {polygons.map((polygon , index) => (
-            <TableRow key={`polygon-${polygon.id}-${index}`}
-
+            {polygons.map((polygon, index) => (
+              <TableRow
+                key={`polygon-${polygon.id}-${index}`}
                 sx={{
                   "&:hover": { backgroundColor: "action.hover" },
                   "&:last-child td": { borderBottom: 0 },
@@ -132,14 +152,20 @@ const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => 
                     sx={{ fontSize: "0.7rem" }}
                   />
                 </TableCell>
-                <TableCell sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
+                <TableCell
+                  sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
+                >
                   <Tooltip title={polygon.name || polygon.id} arrow>
                     <span>{truncateText(polygon.name || polygon.id, 12)}</span>
                   </Tooltip>
                 </TableCell>
                 <TableCell colSpan={2}>
                   <Chip
-                    label={`${polygon.coordinates[0]?.length || 0} pts`}
+                    label={`${
+                      polygon?.coordinates && polygon.coordinates.length > 0
+                        ? polygon.coordinates[0].length
+                        : 0
+                    } pts`}
                     size="small"
                     variant="filled"
                     sx={{ fontSize: "0.65rem", bgcolor: "grey.300" }}
@@ -169,10 +195,23 @@ const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => 
             {/* אין נתונים */}
             {objects.length === 0 && polygons.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 2, color: "text.secondary" }}>
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <TableCell
+                  colSpan={5}
+                  align="center"
+                  sx={{ py: 2, color: "text.secondary" }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
                     <span style={{ fontSize: "1.5rem" }}>📭</span>
-                    <Typography variant="body2" sx={{ mt: 0.5, fontSize: "0.8rem" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ mt: 0.5, fontSize: "0.8rem" }}
+                    >
                       No data available
                     </Typography>
                   </Box>

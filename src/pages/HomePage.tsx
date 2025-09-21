@@ -198,7 +198,7 @@ const HomePage = () => {
             isDeletingObjects={isDeletingObjects} // 👈 חדש
             setIsDeletingObjects={setIsDeletingObjects} // 👈 חדש
             deletedObjects={deletedObjects} // 👈 חדש
-            setDeletedObjects={setDeletedObjects} // 👈 חדש
+            setDeletedObjects={setDeletedObjects} // ‚‚👈 חדש
           />
         </Paper>
 
