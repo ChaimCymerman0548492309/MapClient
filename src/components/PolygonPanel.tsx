@@ -15,6 +15,7 @@ type Props = {
   isDrawing: boolean;
   setIsDrawing: (val: boolean) => void;
   polygons: Polygon[];
+  deletedPolygons: Set<string>;
   setPolygons: React.Dispatch<React.SetStateAction<Polygon[]>>;
   isEditing: boolean;
   setIsEditing: (val: boolean) => void;
@@ -22,102 +23,107 @@ type Props = {
   setEditedPolygons: React.Dispatch<React.SetStateAction<Set<string>>>; // 👈 חדש
   isDeleting: boolean;
   setIsDeleting: (val: boolean) => void;
+  setDeletedPolygons : React.Dispatch<React.SetStateAction<Set<string>>>;
 };
 
 const PolygonPanel = ({
   isDrawing,
   setIsDrawing,
   polygons,
+  deletedPolygons,
   setPolygons,
   isEditing,
   setIsEditing,
   editedPolygons,
   setEditedPolygons,
+  setDeletedPolygons ,
   isDeleting ,
   setIsDeleting
 }: Props) => {
+  console.log("🚀 ~ PolygonPanel ~ deletedPolygons:", deletedPolygons)
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "success" | "error"
   >("idle");
   const previousPolygonsRef = useRef<Polygon[]>([]); // 👈 שמור עותק להשוואה
 
-  // 👈 השוואת פוליגונים לאיתור שינויים
-  useEffect(() => {
-    if (previousPolygonsRef.current.length === 0) {
-      previousPolygonsRef.current = polygons;
-      return;
-    }
-
-    const newEdited = new Set(editedPolygons);
-
-    polygons.forEach((poly, index) => {
-      const prevPoly = previousPolygonsRef.current[index];
-      if (
-        prevPoly &&
-        JSON.stringify(poly.coordinates) !==
-          JSON.stringify(prevPoly.coordinates)
-      ) {
-        newEdited.add(poly.id);
-      }
-    });
-
-    setEditedPolygons(newEdited);
+ useEffect(() => {
+  if (previousPolygonsRef.current.length === 0) {
     previousPolygonsRef.current = polygons;
-  }, [polygons, editedPolygons, setEditedPolygons]);
+    return;
+  }
 
-  const handleSave = async () => {
-    try {
-      setSaveStatus("saving");
+  const newEdited = new Set(editedPolygons);
 
-      // 👈 שמור גם פוליגונים חדשים וגם פוליגונים שעודכנו
-      const polygonsToSave = polygons.filter(
-        (p) => p.id.startsWith("local-") || editedPolygons.has(p.id)
-      );
-
-      if (!polygonsToSave.length) {
-        setSaveStatus("idle");
-        return;
-      }
-
-      const savedPolygons = await Promise.all(
-        polygonsToSave.map(async (poly) => {
-          if (poly.id.startsWith("local-")) {
-            // פוליגון חדש - הוסף
-            return await serverApi.addPolygon({
-              name: poly.name,
-              coordinates: poly.coordinates,
-            });
-          } else {
-            // פוליגון קיים - עדכן
-            await serverApi.deletePolygon(poly.id);
-            return await serverApi.addPolygon({
-              name: poly.name,
-              coordinates: poly.coordinates,
-            });
-          }
-        })
-      );
-
-      // עדכן את ה-IDs ואת רשימת העריכה
-      setPolygons((prev) =>
-        prev.map((p) => {
-          const saved = savedPolygons.find((sp) => sp.name === p.name);
-          if (saved) {
-            return { ...p, id: saved.id };
-          }
-          return p;
-        })
-      );
-
-      setEditedPolygons(new Set()); // נקה את רשימת העריכה
-      setSaveStatus("success");
-      setTimeout(() => setSaveStatus("idle"), 3000);
-    } catch (err) {
-      console.error("Error saving polygons:", err);
-      setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+  polygons.forEach((poly) => {
+    const prevPoly = previousPolygonsRef.current.find(p => p.id === poly.id);
+    if (
+      prevPoly &&
+      JSON.stringify(poly.coordinates) !== JSON.stringify(prevPoly.coordinates)
+    ) {
+      newEdited.add(poly.id);
     }
-  };
+  });
+
+  // שמור רק אם באמת השתנה
+  if (newEdited.size !== editedPolygons.size) {
+    setEditedPolygons(newEdited);
+  }
+
+  previousPolygonsRef.current = polygons;
+}, [polygons ,setEditedPolygons , editedPolygons]);
+
+const handleSave = async () => {
+  try {
+    setSaveStatus("saving");
+
+    // 1. מחיקות
+    for (const id of deletedPolygons) {
+      if (!id.startsWith("local-")) {
+        await serverApi.deletePolygon(id);
+      }
+    }
+
+    // 2. פוליגונים חדשים / מעודכנים
+    const polygonsToSave = polygons.filter(
+      (p) => p.id.startsWith("local-") || editedPolygons.has(p.id)
+    );
+
+    const savedPolygons = await Promise.all(
+      polygonsToSave.map(async (poly) => {
+        if (poly.id.startsWith("local-")) {
+          return await serverApi.addPolygon({
+            name: poly.name,
+            coordinates: poly.coordinates,
+          });
+        } else {
+          await serverApi.deletePolygon(poly.id);
+          return await serverApi.addPolygon({
+            name: poly.name,
+            coordinates: poly.coordinates,
+          });
+        }
+      })
+    );
+
+    // עדכון state
+    setPolygons((prev) =>
+      prev.map((p) => {
+        const saved = savedPolygons.find((sp) => sp.name === p.name);
+        return saved ? { ...p, id: saved.id } : p;
+      })
+    );
+
+    setEditedPolygons(new Set());
+    setDeletedPolygons(new Set()); // 👈 נקה מחיקות אחרי שמירה
+    setSaveStatus("success");
+    setTimeout(() => setSaveStatus("idle"), 3000);
+  } catch (err) {
+    console.error("Error saving polygons:", err);
+    setSaveStatus("error");
+    setTimeout(() => setSaveStatus("idle"), 3000);
+  }
+};
+
 
   // const handleDelete = async () => {
   //   if (!polygons.length) return;
@@ -146,8 +152,12 @@ const PolygonPanel = ({
     }
   };
 
-  const unsavedCount = polygons.filter((p) => p.id.startsWith("local-")).length;
-  const totalUnsaved = unsavedCount + editedPolygons.size; // 👈 סך הכל לא שמור
+  // const unsavedCount = polygons.filter((p) => p.id.startsWith("local-")).length;
+  // const totalUnsaved = unsavedCount + editedPolygons.size; // 👈 סך הכל לא שמור
+const totalUnsaved =
+  polygons.filter((p) => p.id.startsWith("local-")).length +
+  editedPolygons.size +
+  deletedPolygons.size;
 
   return (
     <Paper

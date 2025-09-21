@@ -115,9 +115,9 @@ const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => 
             ))}
 
             {/* פוליגונים */}
-            {polygons.map((polygon) => (
-              <TableRow
-                key={`polygon-${polygon.id}`}
+            {polygons.map((polygon , index) => (
+            <TableRow key={`polygon-${polygon.id}-${index}`}
+
                 sx={{
                   "&:hover": { backgroundColor: "action.hover" },
                   "&:last-child td": { borderBottom: 0 },

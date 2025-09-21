@@ -17,6 +17,9 @@ const HomePage = () => {
   const [objectType, setObjectType] = useState("Marker");
   const [editedPolygons, setEditedPolygons] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -116,8 +119,9 @@ const HomePage = () => {
                 );
                 setEditedPolygons((prev) => new Set(prev).add(polygonId));
               }}
-              onDeletePolygon={(id) => {
-                setPolygons((prev) => prev.filter((poly) => poly.id !== id));
+              onDeletePolygon={(polygonId) => {
+                setPolygons((prev) => prev.filter((p) => p.id !== polygonId));
+                setDeletedPolygons((prev) => new Set(prev).add(polygonId));
               }}
             />
           </div>
@@ -155,6 +159,8 @@ const HomePage = () => {
             setEditedPolygons={setEditedPolygons}
             isDeleting={isDeleting}
             setIsDeleting={setIsDeleting}
+            deletedPolygons={deletedPolygons}
+            setDeletedPolygons={setDeletedPolygons}
           />
         </Paper>
 

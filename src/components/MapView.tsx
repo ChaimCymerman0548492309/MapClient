@@ -231,6 +231,7 @@ const MapView = ({
           type: "FeatureCollection",
           features: polygonsToUpdate.map((p) => ({
             type: "Feature",
+            properties: { id: p.id }, // 👈 הוספת מזהה
             geometry: {
               type: "Polygon",
               coordinates: p.coordinates,
@@ -354,30 +355,30 @@ const MapView = ({
     });
   }, [objects, ready]);
 
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready || !isDeleting) return;
+ useEffect(() => {
+  const map = mapRef.current;
+  if (!map || !ready) return;
 
-    const handleDeleteClick = (e: any) => {
-      const feature = e.features?.[0];
-      if (feature?.geometry?.type === "Polygon") {
-        const polygonId = feature.properties?.id;
-        if (polygonId) {
-          onDeletePolygon?.(polygonId); // 👈 שלח למחיקה
-        }
-      }
-    };
-
-    if (map.getLayer("polygons")) {
-      map.on("click", "polygons", handleDeleteClick);
+  const handleDeleteClick = (e: any) => {
+    if (!isDeleting) return; // 👈 הוסף guard
+    const feature = e.features?.[0];
+    if (feature?.geometry?.type === "Polygon") {
+      const polygonId = feature.properties?.id;
+      if (polygonId) onDeletePolygon?.(polygonId);
     }
+  };
 
-    return () => {
-      if (map.getLayer("polygons")) {
-        map.off("click", "polygons", handleDeleteClick);
-      }
-    };
-  }, [ready, isDeleting, onDeletePolygon]);
+  if (map.getLayer("polygons")) {
+    map.on("click", "polygons", handleDeleteClick);
+  }
+
+  return () => {
+    if (map.getLayer("polygons")) {
+      map.off("click", "polygons", handleDeleteClick);
+    }
+  };
+}, [ready, isDeleting, onDeletePolygon]);
+
 
   return (
     <div
