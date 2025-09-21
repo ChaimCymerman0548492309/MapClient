@@ -12,8 +12,11 @@ const HomePage = () => {
   const [polygons, setPolygons] = useState<Polygon[]>([]);
   const [objects, setObjects] = useState<MapObject[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isAddingObject, setIsAddingObject] = useState(false);
   const [objectType, setObjectType] = useState("Marker");
+  const [editedPolygons, setEditedPolygons] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,12 +99,25 @@ const HomePage = () => {
               isDrawing={isDrawing}
               isAddingObject={isAddingObject}
               objectType={objectType}
+              isEditing={isEditing}
+              isDeleting={isDeleting} // 👈 חדש
               onFinishPolygon={(poly) => {
                 setPolygons((prev) => [...prev, poly]);
                 setIsDrawing(false);
               }}
-              onAddObject={(obj) => {
-                setObjects((prev) => [...prev, obj]);
+              onAddObject={(obj) => setObjects((prev) => [...prev, obj])}
+              onUpdatePolygon={(polygonId, newRing) => {
+                setPolygons((prev) =>
+                  prev.map((poly) =>
+                    poly.id === polygonId
+                      ? { ...poly, coordinates: [newRing] } // ✅ עטוף שוב
+                      : poly
+                  )
+                );
+                setEditedPolygons((prev) => new Set(prev).add(polygonId));
+              }}
+              onDeletePolygon={(id) => {
+                setPolygons((prev) => prev.filter((poly) => poly.id !== id));
               }}
             />
           </div>
@@ -133,6 +149,12 @@ const HomePage = () => {
             setIsDrawing={setIsDrawing}
             polygons={polygons}
             setPolygons={setPolygons}
+            isEditing={isEditing}
+            setIsEditing={setIsEditing}
+            editedPolygons={editedPolygons}
+            setEditedPolygons={setEditedPolygons}
+            isDeleting={isDeleting}
+            setIsDeleting={setIsDeleting}
           />
         </Paper>
 
@@ -172,7 +194,6 @@ const HomePage = () => {
           <MapDataTable
             polygons={polygons}
             objects={objects}
-            
             setObjects={setObjects}
             setPolygons={setPolygons}
           />{" "}

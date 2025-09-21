@@ -93,14 +93,14 @@ const ObjectsPanel = ({
 
   return (
     <Paper
-      sx={{
-        p: 1,
-        height: "90%",
-        display: "flex",
-        flexDirection: "column",
-        minHeight: 0,
-        overflow: "hidden",
-      }}
+      // sx={{
+      //   p: 1,
+      //   height: "90%",
+      //   display: "flex",
+      //   flexDirection: "column",
+      //   minHeight: 0,
+      //   overflow: "hidden",
+      // }}
     >
       <Typography
         variant="subtitle2"
