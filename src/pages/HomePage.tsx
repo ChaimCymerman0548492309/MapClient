@@ -20,6 +20,8 @@ const HomePage = () => {
   const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(
     new Set()
   );
+  const [isDeletingObjects, setIsDeletingObjects] = useState(false);
+  const [deletedObjects, setDeletedObjects] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,7 +105,7 @@ const HomePage = () => {
               isAddingObject={isAddingObject}
               objectType={objectType}
               isEditing={isEditing}
-              isDeleting={isDeleting} // 👈 חדש
+              isDeleting={isDeleting}
               onFinishPolygon={(poly) => {
                 setPolygons((prev) => [...prev, poly]);
                 setIsDrawing(false);
@@ -113,7 +115,7 @@ const HomePage = () => {
                 setPolygons((prev) =>
                   prev.map((poly) =>
                     poly.id === polygonId
-                      ? { ...poly, coordinates: [newRing] } // ✅ עטוף שוב
+                      ? { ...poly, coordinates: [newRing] }
                       : poly
                   )
                 );
@@ -122,6 +124,18 @@ const HomePage = () => {
               onDeletePolygon={(polygonId) => {
                 setPolygons((prev) => prev.filter((p) => p.id !== polygonId));
                 setDeletedPolygons((prev) => new Set(prev).add(polygonId));
+              }}
+              isDeletingObjects={isDeletingObjects}
+              onDeleteObject={(id) => {
+                // 👇 מחיקה מיידית מה־objects
+                setObjects((prev) => prev.filter((o) => o.id !== id));
+
+                // 👇 הוספה לסט מחיקות
+                setDeletedObjects((prev) => {
+                  const next = new Set(prev);
+                  next.add(id);
+                  return next;
+                });
               }}
             />
           </div>
@@ -181,13 +195,17 @@ const HomePage = () => {
             setIsAdding={setIsAddingObject}
             objectType={objectType}
             setObjectType={setObjectType}
+            isDeletingObjects={isDeletingObjects} // 👈 חדש
+            setIsDeletingObjects={setIsDeletingObjects} // 👈 חדש
+            deletedObjects={deletedObjects} // 👈 חדש
+            setDeletedObjects={setDeletedObjects} // 👈 חדש
           />
         </Paper>
 
         {/* Map Data Panel - גובה יחסי 2 */}
         <Paper
           sx={{
-            flex: 2,
+            flex: 1,
             p: 1,
             overflow: "auto",
             borderRadius: 0,

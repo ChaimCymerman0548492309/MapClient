@@ -23,7 +23,7 @@ type Props = {
   setEditedPolygons: React.Dispatch<React.SetStateAction<Set<string>>>; // 👈 חדש
   isDeleting: boolean;
   setIsDeleting: (val: boolean) => void;
-  setDeletedPolygons : React.Dispatch<React.SetStateAction<Set<string>>>;
+  setDeletedPolygons: React.Dispatch<React.SetStateAction<Set<string>>>;
 };
 
 const PolygonPanel = ({
@@ -36,94 +36,109 @@ const PolygonPanel = ({
   setIsEditing,
   editedPolygons,
   setEditedPolygons,
-  setDeletedPolygons ,
-  isDeleting ,
-  setIsDeleting
+  setDeletedPolygons,
+  isDeleting,
+  setIsDeleting,
 }: Props) => {
-  console.log("🚀 ~ PolygonPanel ~ deletedPolygons:", deletedPolygons)
+  // console.log("🚀 ~ PolygonPanel ~ deletedPoly‚gons:", deletedPolygons);
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "success" | "error"
   >("idle");
   const previousPolygonsRef = useRef<Polygon[]>([]); // 👈 שמור עותק להשוואה
 
- useEffect(() => {
-  if (previousPolygonsRef.current.length === 0) {
-    previousPolygonsRef.current = polygons;
-    return;
-  }
-
-  const newEdited = new Set(editedPolygons);
-
-  polygons.forEach((poly) => {
-    const prevPoly = previousPolygonsRef.current.find(p => p.id === poly.id);
-    if (
-      prevPoly &&
-      JSON.stringify(poly.coordinates) !== JSON.stringify(prevPoly.coordinates)
-    ) {
-      newEdited.add(poly.id);
+  useEffect(() => {
+    if (previousPolygonsRef.current.length === 0) {
+      previousPolygonsRef.current = polygons;
+      return;
     }
-  });
 
-  // שמור רק אם באמת השתנה
-  if (newEdited.size !== editedPolygons.size) {
-    setEditedPolygons(newEdited);
-  }
+    const newEdited = new Set(editedPolygons);
 
-  previousPolygonsRef.current = polygons;
-}, [polygons ,setEditedPolygons , editedPolygons]);
-
-const handleSave = async () => {
-  try {
-    setSaveStatus("saving");
-
-    // 1. מחיקות
-    for (const id of deletedPolygons) {
-      if (!id.startsWith("local-")) {
-        await serverApi.deletePolygon(id);
+    polygons.forEach((poly) => {
+      const prevPoly = previousPolygonsRef.current.find(
+        (p) => p.id === poly.id
+      );
+      if (
+        prevPoly &&
+        JSON.stringify(poly.coordinates) !==
+          JSON.stringify(prevPoly.coordinates)
+      ) {
+        newEdited.add(poly.id);
       }
+    });
+
+    // שמור רק אם באמת השתנה
+    if (newEdited.size !== editedPolygons.size) {
+      setEditedPolygons(newEdited);
     }
 
-    // 2. פוליגונים חדשים / מעודכנים
-    const polygonsToSave = polygons.filter(
-      (p) => p.id.startsWith("local-") || editedPolygons.has(p.id)
-    );
+    previousPolygonsRef.current = polygons;
+  }, [polygons, setEditedPolygons, editedPolygons]);
 
-    const savedPolygons = await Promise.all(
-      polygonsToSave.map(async (poly) => {
-        if (poly.id.startsWith("local-")) {
-          return await serverApi.addPolygon({
-            name: poly.name,
-            coordinates: poly.coordinates,
-          });
-        } else {
-          await serverApi.deletePolygon(poly.id);
-          return await serverApi.addPolygon({
-            name: poly.name,
-            coordinates: poly.coordinates,
-          });
+  const handleSave = async () => {
+    try {
+      setSaveStatus("saving");
+
+      // 1. מחיקות
+      for (const id of deletedPolygons) {
+        if (!id.startsWith("local-")) {
+          await serverApi.deletePolygon(id);
         }
-      })
-    );
+      }
 
-    // עדכון state
-    setPolygons((prev) =>
-      prev.map((p) => {
-        const saved = savedPolygons.find((sp) => sp.name === p.name);
-        return saved ? { ...p, id: saved.id } : p;
-      })
-    );
+      // 2. פוליגונים חדשים / מעודכנים
+      const polygonsToSave = polygons.filter(
+        (p) => p.id.startsWith("local-") || editedPolygons.has(p.id)
+      );
 
-    setEditedPolygons(new Set());
-    setDeletedPolygons(new Set()); // 👈 נקה מחיקות אחרי שמירה
-    setSaveStatus("success");
-    setTimeout(() => setSaveStatus("idle"), 3000);
-  } catch (err) {
-    console.error("Error saving polygons:", err);
-    setSaveStatus("error");
-    setTimeout(() => setSaveStatus("idle"), 3000);
-  }
-};
+      const savedPolygons = await Promise.all(
+        polygonsToSave.map(async (poly) => {
+          if (poly.id.startsWith("local-")) {
+            return await serverApi.addPolygon({
+              name: poly.name,
+              coordinates: poly.coordinates,
+            });
+          } else {
+            await serverApi.deletePolygon(poly.id);
+            const newPoly = await serverApi.addPolygon({
+              name: poly.name,
+              coordinates: poly.coordinates,
+            });
 
+            // 👇 מחק את הישן מהסטייט
+            setPolygons((prev) => prev.filter((p) => p.id !== poly.id));
+
+            return newPoly;
+          }
+        })
+      );
+
+      // עדכון state
+      setPolygons((prev) => {
+        const updated = [...prev];
+
+        for (const saved of savedPolygons) {
+          const idx = updated.findIndex((p) => p.name === saved.name);
+          if (idx >= 0) {
+            updated[idx] = { ...updated[idx], id: saved.id };
+          } else {
+            updated.push(saved);
+          }
+        }
+
+        return updated;
+      });
+
+      setEditedPolygons(new Set());
+      setDeletedPolygons(new Set()); // 👈 נקה מחיקות אחרי שמירה
+      setSaveStatus("success");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch (err) {
+      console.error("Error saving polygons:", err);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  };
 
   // const handleDelete = async () => {
   //   if (!polygons.length) return;
@@ -154,10 +169,10 @@ const handleSave = async () => {
 
   // const unsavedCount = polygons.filter((p) => p.id.startsWith("local-")).length;
   // const totalUnsaved = unsavedCount + editedPolygons.size; // 👈 סך הכל לא שמור
-const totalUnsaved =
-  polygons.filter((p) => p.id.startsWith("local-")).length +
-  editedPolygons.size +
-  deletedPolygons.size;
+  const totalUnsaved =
+    polygons.filter((p) => p.id.startsWith("local-")).length +
+    editedPolygons.size +
+    deletedPolygons.size;
 
   return (
     <Paper

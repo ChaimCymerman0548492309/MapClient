@@ -18,6 +18,8 @@ type Props = {
   onAddObject?: (obj: MapObject) => void;
   onUpdatePolygon: (polygonId: string, newRing: [number, number][]) => void;
   onDeletePolygon?: (id: string) => void; // 👈 חדש
+  isDeletingObjects?: boolean;
+  onDeleteObject?: (id: string) => void;
 };
 
 const MapView = ({
@@ -32,6 +34,8 @@ const MapView = ({
   onUpdatePolygon,
   isDeleting,
   onDeletePolygon,
+  isDeletingObjects,
+  onDeleteObject,
 }: Props) => {
   const mapRef = useRef<Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -352,33 +356,38 @@ const MapView = ({
         .addTo(map);
 
       markersRef.current.push(marker);
+
+      el.onclick = () => {
+        if (isDeletingObjects) {
+          onDeleteObject?.(o.id); // שלח למחיקה להורה
+        }
+      };
     });
-  }, [objects, ready]);
+}, [objects, ready, isDeletingObjects, onDeleteObject]);
 
- useEffect(() => {
-  const map = mapRef.current;
-  if (!map || !ready) return;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
 
-  const handleDeleteClick = (e: any) => {
-    if (!isDeleting) return; // 👈 הוסף guard
-    const feature = e.features?.[0];
-    if (feature?.geometry?.type === "Polygon") {
-      const polygonId = feature.properties?.id;
-      if (polygonId) onDeletePolygon?.(polygonId);
-    }
-  };
+    const handleDeleteClick = (e: any) => {
+      if (!isDeleting) return; // 👈 הוסף guard
+      const feature = e.features?.[0];
+      if (feature?.geometry?.type === "Polygon") {
+        const polygonId = feature.properties?.id;
+        if (polygonId) onDeletePolygon?.(polygonId);
+      }
+    };
 
-  if (map.getLayer("polygons")) {
-    map.on("click", "polygons", handleDeleteClick);
-  }
-
-  return () => {
     if (map.getLayer("polygons")) {
-      map.off("click", "polygons", handleDeleteClick);
+      map.on("click", "polygons", handleDeleteClick);
     }
-  };
-}, [ready, isDeleting, onDeletePolygon]);
 
+    return () => {
+      if (map.getLayer("polygons")) {
+        map.off("click", "polygons", handleDeleteClick);
+      }
+    };
+  }, [ready, isDeleting, onDeletePolygon]);
 
   return (
     <div
