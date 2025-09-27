@@ -17,8 +17,8 @@ It provides an interactive map where users can:
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/your-username/map-client.git
-cd map-client
+git clone https://github.com/ChaimCymerman0548492309/MapClient
+cd mapClient
 npm install
 ````
 
@@ -26,7 +26,7 @@ npm install
 
 ## ▶️ Running
 
-Start the development server:
+Start the development :
 
 ```bash
 npm run dev
@@ -36,7 +36,6 @@ Build for production:
 
 ```bash
 npm run build
-npm run preview
 ```
 
 ---
@@ -100,14 +99,24 @@ The client communicates with the server through REST endpoints:
 
 ---
 
-## 🛠 Features
+## ✅ Implemented Features
 
-* Polygon drawing with closing detection
-* Marker placement with custom icons
-* Edit mode (drag vertices)
-* Delete mode (click to remove)
-* Save pending changes in one click
+* Map is displayed and polygons can be drawn
+* Polygon management (Add / Save / Delete) works as expected
+* Objects can be added as markers or custom symbols (e.g., Jeep)
+* Map Data Table updates correctly with Object / Lat / Lon
+* Data is stored and retrieved from MongoDB via RESTful API
+* Code is clean, documented, and modular
 
 ---
 
+## 🎁 Bonus Features
+
+* Edit existing polygons
+* Choose symbols from a library (Jeep, Ship, Plane, etc.)
+* Spatial queries for polygons/objects
+* Import/export as GeoJSON
+* Unit and integration tests
+
+---
 
