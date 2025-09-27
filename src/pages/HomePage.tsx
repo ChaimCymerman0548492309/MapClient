@@ -152,29 +152,6 @@ const HomePage = () => {
           flexDirection: "column",
         }}
       >
-        {/* Objects Panel - גובה יחסי 1 */}
-        <Paper
-          sx={{
-            flex: 1,
-            borderBottom: "1px solid black",
-            p: 1,
-            borderRadius: 0,
-            minHeight: 0, // חשוב לגמישות
-          }}
-        >
-          <ObjectsPanel
-            objects={objects}
-            setObjects={setObjects}
-            isAdding={isAddingObject}
-            setIsAdding={setIsAddingObject}
-            objectType={objectType}
-            setObjectType={setObjectType}
-            isDeletingObjects={isDeletingObjects} // 👈 חדש
-            setIsDeletingObjects={setIsDeletingObjects} // 👈 חדש
-            deletedObjects={deletedObjects} // 👈 חדש
-            setDeletedObjects={setDeletedObjects} // ‚‚👈 חדש
-          />
-        </Paper>
         {/* Polygon Panel - גובה יחסי 1 */}
         <Paper
           sx={{
@@ -200,6 +177,30 @@ const HomePage = () => {
             setDeletedPolygons={setDeletedPolygons}
           />
         </Paper>
+        {/* Objects Panel - גובה יחסי 1 */}
+        <Paper
+          sx={{
+            flex: 1,
+            borderBottom: "1px solid black",
+            p: 1,
+            borderRadius: 0,
+            minHeight: 0, // חשוב לגמישות
+          }}
+        >
+          <ObjectsPanel
+            objects={objects}
+            setObjects={setObjects}
+            isAdding={isAddingObject}
+            setIsAdding={setIsAddingObject}
+            objectType={objectType}
+            setObjectType={setObjectType}
+            isDeletingObjects={isDeletingObjects} // 👈 חדש
+            setIsDeletingObjects={setIsDeletingObjects} // 👈 חדש
+            deletedObjects={deletedObjects} // 👈 חדש
+            setDeletedObjects={setDeletedObjects} // ‚‚👈 חדש
+          />
+        </Paper>
+        
         {/* Map Data Panel - גובה יחסי 2 */}
         <Paper
           sx={{
