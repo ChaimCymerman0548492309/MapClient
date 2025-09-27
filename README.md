@@ -1,69 +1,113 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+````markdown
+# Map Client
 
-Currently, two official plugins are available:
+This is the front-end client for the Map Management project.  
+It provides an interactive map where users can:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Draw polygons
+- Add and remove objects (markers)
+- Edit existing polygons
+- Save changes to the server
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Clone the repository and install dependencies:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+git clone https://github.com/your-username/map-client.git
+cd map-client
+npm install
+````
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## ▶️ Running
+
+Start the development server:
+
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Build for production:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
+npm run preview
 ```
+
+---
+
+## ⚙️ Environment
+
+Create a `.env` file with:
+
+```
+VITE_API_URL=http://localhost:4000
+```
+
+---
+
+## 📂 Project Structure
+
+```
+src/
+ ├─ api/         # Axios setup
+ ├─ components/  # UI components
+ ├─ pages/       # Page-level components
+ ├─ types/       # Shared TypeScript types
+ ├─ App.tsx
+ └─ main.tsx
+```
+
+---
+
+## 📐 Schemas (Types)
+
+### Polygon
+
+```ts
+type Polygon = {
+  id: string;
+  name: string;
+  coordinates: number[][][];
+};
+```
+
+### MapObject
+
+```ts
+type MapObject = {
+  id: string;
+  type: string;
+  coordinates: [number, number];
+};
+```
+
+---
+
+## 🌐 Routes (API)
+
+The client communicates with the server through REST endpoints:
+
+* **POST /polygons** → add polygon
+* **DELETE /polygons/:id** → delete polygon
+* **POST /objects** → add object
+* **DELETE /objects/:id** → delete object
+
+---
+
+## 🛠 Features
+
+* Polygon drawing with closing detection
+* Marker placement with custom icons
+* Edit mode (drag vertices)
+* Delete mode (click to remove)
+* Save pending changes in one click
+
+---
+
+
