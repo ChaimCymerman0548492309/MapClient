@@ -65,8 +65,8 @@ const HomePage = () => {
     <div
       style={{
         display: "flex",
-        height: "100vh",
-        width: "100vw",
+        height: "97vh",
+        width: "98vw",
         overflow: "hidden",
       }}
     >

@@ -1,5 +1,4 @@
-
-````markdown
+```markdown
 # Map Client
 
 This is the front-end client for the Map Management project.  
@@ -20,7 +19,7 @@ Clone the repository and install dependencies:
 git clone https://github.com/ChaimCymerman0548492309/MapClient
 cd mapClient
 npm install
-````
+```
 
 ---
 
@@ -120,3 +119,5 @@ The client communicates with the server through REST endpoints:
 
 ---
 
+![Map Preview](ing.png)
+```
