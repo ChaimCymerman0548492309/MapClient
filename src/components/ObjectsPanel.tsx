@@ -1,16 +1,9 @@
-import {
-  Alert,
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  Typography,
-} from "@mui/material";
+// ObjectsPanel.tsx
+import { Alert, Box, Button, MenuItem, Paper, Select, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 import { serverApi } from "../api/api";
 import type { MapObject } from "../types/object.type";
+import "../App.css";
 
 type Props = {
   objects: MapObject[];
@@ -37,56 +30,30 @@ const ObjectsPanel = ({
   setDeletedObjects,
   deletedObjects,
 }: Props) => {
-  const [saveStatus, setSaveStatus] = useState<
-    "idle" | "saving" | "success" | "error"
-  >("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
 
   const handleAddToggle = () => {
-    if (isAdding) {
-      // אם כבר במוד הוספה - כבה
-      setIsAdding(false);
-    } else {
-      // אם לא במוד הוספה - הדלק וכבה מחיקה
-      setIsAdding(true);
-      setIsDeletingObjects(false);
-    }
+    setIsAdding(!isAdding);
+    if (!isAdding) setIsDeletingObjects(false);
   };
 
   const handleDeleteModeToggle = () => {
-    if (isDeletingObjects) {
-      // אם כבר במוד מחיקה - כבה
-      setIsDeletingObjects(false);
-    } else {
-      // אם לא במוד מחיקה - הדלק וכבה הוספה
-      setIsDeletingObjects(true);
-      setIsAdding(false);
-    }
+    setIsDeletingObjects(!isDeletingObjects);
+    if (!isDeletingObjects) setIsAdding(false);
   };
 
   const handleSave = async () => {
     try {
       setSaveStatus("saving");
+      for (const id of deletedObjects) if (!id.startsWith("local-")) await serverApi.deleteObject(id);
 
-      // 1. מחיקות
-      for (const id of deletedObjects) {
-        if (!id.startsWith("local-")) {
-          await serverApi.deleteObject(id);
-        }
-      }
-
-      // 2. אובייקטים חדשים
       const objectsToSave = objects.filter((o) => o.id.startsWith("local-"));
       const savedObjects = await Promise.all(
-        objectsToSave.map(
-          async (obj) =>
-            await serverApi.addObject({
-              type: obj.type,
-              coordinates: obj.coordinates,
-            })
+        objectsToSave.map((obj) =>
+          serverApi.addObject({ type: obj.type, coordinates: obj.coordinates })
         )
       );
 
-      // עדכון ה־IDs
       setObjects((prev) =>
         prev.map((o) => {
           const saved = savedObjects.find((so) => so.type === o.type);
@@ -94,160 +61,75 @@ const ObjectsPanel = ({
         })
       );
 
-      // נקה גם מחיקות וגם "חדשים לא שמורים"
       setDeletedObjects(new Set());
       setSaveStatus("success");
       setTimeout(() => setSaveStatus("idle"), 3000);
-    } catch (err) {
-      console.error("Error saving objects:", err);
+    } catch {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
     }
   };
 
-  // סטטיסטיקות לשורת מצב
   const unsavedNew = objects.filter((o) => o.id.startsWith("local-")).length;
   const pendingDeletes = deletedObjects.size;
   const totalPending = unsavedNew + pendingDeletes;
 
   return (
-    <Paper
-      sx={{
-        p: 1.5,
-        display: "flex",
-        flexDirection: "column",
-        maxWidth: "100%",
-        overflow: "hidden",
-        boxSizing: "border-box",
-        gap: 1,
-      }}
-    >
-      <Typography
-        variant="subtitle1"
-        sx={{
-          color: "primary.main",
-          fontWeight: "bold",
-          fontSize: "0.9rem",
-          textAlign: "center",
-        }}
-      >
-        🎯 Objects
-      </Typography>
+    <Paper className="op-root" square>
+      <Typography variant="subtitle1" className="op-title">🎯 Objects</Typography>
 
-      {/* סטטוס */}
-      {saveStatus === "saving" && (
-        <Alert severity="info" sx={{ py: 0.5, fontSize: "0.7rem" }}>
-          Saving…
-        </Alert>
-      )}
-      {saveStatus === "success" && (
-        <Alert severity="success" sx={{ py: 0.5, fontSize: "0.7rem" }}>
-          Saved!
-        </Alert>
-      )}
-      {saveStatus === "error" && (
-        <Alert severity="error" sx={{ py: 0.5, fontSize: "0.7rem" }}>
-          Error
-        </Alert>
-      )}
+      {saveStatus === "saving" && <Alert severity="info" className="op-alert">Saving…</Alert>}
+      {saveStatus === "success" && <Alert severity="success" className="op-alert">Saved!</Alert>}
+      {saveStatus === "error" && <Alert severity="error" className="op-alert">Error</Alert>}
 
-      {/* סטטיסטיקות */}
-      <Box
-        sx={{
-          p: 0.5,
-          bgcolor: "grey.100",
-          borderRadius: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 1,
-          flexWrap: "wrap",
-        }}
-      >
-        <Typography variant="caption" fontSize="0.65rem">
-          📊 Total: {objects.length}
-        </Typography>
+      <Box className="op-stats">
+        <Typography variant="caption" className="op-stat">📊 Total: {objects.length}</Typography>
         <Typography
           variant="caption"
           color={totalPending ? "warning.main" : "success.main"}
-          fontSize="0.65rem"
+          className="op-stat"
         >
           💾 Pending: {totalPending}
         </Typography>
-        {isDeletingObjects && (
-          <Typography variant="caption" color="warning.main" fontSize="0.65rem">
-            🗑 Click to remove
-          </Typography>
-        )}
-        {isAdding && (
-          <Typography variant="caption" color="info.main" fontSize="0.65rem">
-            ➕ Click map to add
-          </Typography>
-        )}
+        {isDeletingObjects && <Typography variant="caption" color="warning.main" className="op-stat">🗑 Click to remove</Typography>}
+        {isAdding && <Typography variant="caption" color="info.main" className="op-stat">➕ Click map to add</Typography>}
       </Box>
 
-      {/* בחירת סוג */}
-      {/* <Typography variant="caption" display="block" sx={{ textAlign: "center" }} fontSize="0.7rem">
-        Select Type:
-      </Typography> */}
       <Select
         fullWidth
         size="small"
         value={objectType}
         onChange={(e) => setObjectType(e.target.value)}
-        sx={{ fontSize: "0.7rem", height: "28px" }}
-        disabled={isDeletingObjects} // disable when in delete mode
+        disabled={isDeletingObjects}
+        className="op-select"
       >
-        <MenuItem value="Marker" sx={{ fontSize: "0.7rem" }}>
-          📍 Marker
-        </MenuItem>
-        <MenuItem value="Jeep" sx={{ fontSize: "0.7rem" }}>
-          🚙 Jeep
-        </MenuItem>
-        <MenuItem value="Ship" sx={{ fontSize: "0.7rem" }}>
-          🚢 Ship
-        </MenuItem>
-        <MenuItem value="Plane" sx={{ fontSize: "0.7rem" }}>
-          ✈️ Plane
-        </MenuItem>
-        <MenuItem value="Tree" sx={{ fontSize: "0.7rem" }}>
-          🌳 Tree
-        </MenuItem>
-        <MenuItem value="Building" sx={{ fontSize: "0.7rem" }}>
-          🏢 Building
-        </MenuItem>
+        <MenuItem value="Marker" className="op-option">📍 Marker</MenuItem>
+        <MenuItem value="Jeep" className="op-option">🚙 Jeep</MenuItem>
+        <MenuItem value="Ship" className="op-option">🚢 Ship</MenuItem>
+        <MenuItem value="Plane" className="op-option">✈️ Plane</MenuItem>
+        <MenuItem value="Tree" className="op-option">🌳 Tree</MenuItem>
+        <MenuItem value="Building" className="op-option">🏢 Building</MenuItem>
       </Select>
 
-      {/* כפתורים בשורה אחת */}
-      <Stack direction="row" spacing={0.5} sx={{ width: "100%" }}>
+      <Stack direction="row" spacing={0.5} className="op-buttons">
         <Button
           variant={isAdding ? "contained" : "outlined"}
           color={isAdding ? "warning" : "primary"}
           size="small"
           onClick={handleAddToggle}
-          sx={{
-            fontSize: "0.65rem",
-            minWidth: "auto",
-            px: 0.5,
-            flex: 1,
-          }}
-          disabled={isDeletingObjects} // disable when in delete mode
+          disabled={isDeletingObjects}
+          className="op-btn"
         >
           {isAdding ? "Cancel Add Mode" : "Add Mode"}
         </Button>
 
         <Button
           variant={isDeletingObjects ? "contained" : "outlined"}
-          color={isDeletingObjects ? "error" : "error"}
+          color="error"
           size="small"
           onClick={handleDeleteModeToggle}
-          sx={{
-            fontSize: "0.65rem",
-            minWidth: "auto",
-            px: 0.5,
-            flex: 1,
-          }}
-          disabled={objects.length === 0 || isAdding} // disable when no objects or in add mode
+          disabled={objects.length === 0 || isAdding}
+          className="op-btn"
         >
           {isDeletingObjects ? "Cancel Delete Mode" : "Delete Mode"}
         </Button>
@@ -258,12 +140,7 @@ const ObjectsPanel = ({
           size="small"
           onClick={handleSave}
           disabled={totalPending === 0 || saveStatus === "saving"}
-          sx={{
-            fontSize: "0.65rem",
-            minWidth: "auto",
-            px: 0.5,
-            flex: 1,
-          }}
+          className="op-btn"
         >
           {saveStatus === "saving" ? "..." : `Save (${totalPending})`}
         </Button>

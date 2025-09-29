@@ -1,42 +1,57 @@
-/* #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+/* ----- Layout: HomePage ----- */
+.hp-root { display: flex; height: 97vh; width: 98vw; overflow: hidden; }
+.hp-left { flex: 3; height: 100%; border-right: 1px solid black; }
+.hp-paper { height: 100%; display: flex; flex-direction: column; }
+.hp-header { border-bottom: 1px solid black; padding: 8px; background: var(--mui-palette-primary-main,#1976d2); color: #fff; }
+.hp-map { flex: 1; width: 100%; height: 100%; } /* ← תיקון: הוספתי height */
+.hp-right { flex: 1; min-width: 300px; height: 100%; display: flex; flex-direction: column; }
+.hp-panel { flex: 1; border-bottom: 1px solid black; padding: 8px; min-height: 0; }
+.hp-data { flex: 1; padding: 8px; overflow: auto; min-height: 0; }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
+/* ----- PolygonPanel ----- */
+.pp-root { padding: 8px; height: 90%; display: flex; flex-direction: column; min-height: 0; }
+.pp-title { color: var(--mui-palette-primary-main,#1976d2); font-weight: bold; font-size: .9rem; margin-bottom: 4px; }
+.pp-alert { margin: 4px 0; padding: 2px 4px; font-size: .7rem; }
+.pp-stats { margin-bottom: 8px; padding: 4px; background: #f5f5f5; border-radius: 4px; font-size: .7rem; }
+.pp-chip { margin-top: 4px; font-size: .6rem; height: 20px; }
+.pp-buttons { margin-bottom: 4px; }
+.pp-btn { flex: 1; padding: 2px 0; font-size: .65rem; min-height: 28px; }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* ----- ObjectsPanel ----- */
+.op-root { padding: 12px; display: flex; flex-direction: column; max-width: 100%; overflow: hidden; gap: 8px; }
+.op-title { color: var(--mui-palette-primary-main,#1976d2); font-weight: bold; font-size: .9rem; text-align: center; }
+.op-alert { padding: 4px; font-size: .7rem; }
+.op-stats { padding: 4px; background: #f5f5f5; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.op-stat { font-size: .65rem; }
+.op-select,.op-option { font-size: .7rem; }
+.op-select { height: 28px; }
+.op-buttons { width: 100%; }
+.op-btn { font-size: .65rem; min-width: auto; padding: 0 4px; flex: 1; }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
+/* ----- MapDataTable ----- */
+.mdt-root { width: 100%; height: 100%; overflow: hidden; }
+.mdt-title { color: var(--mui-palette-primary-main,#1976d2); font-weight: bold; font-size: 1rem; }
+.mdt-container { height: calc(100% - 40px); overflow: auto; }
+.mdt-table { table-layout: fixed; }
+.mdt-table .MuiTableCell-root { padding: 6px; font-size: .75rem; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mdt-header { background: #f5f5f5; }
+.mdt-th { font-weight: bold; font-size: .75rem; }
+.mdt-row:hover { background: rgba(0,0,0,.04); }
+.mdt-mono { font-family: monospace; font-size: .75rem; }
+.mdt-chip { font-size: .7rem; }
+.mdt-chip-count { font-size: .65rem; background: #e0e0e0; }
+.mdt-delete-btn { transition: all .2s; }
+.mdt-delete-btn:hover { background: #ef9a9a; color: #fff; }
+.mdt-empty { padding: 16px; color: #757575; }
+.mdt-empty-box { display: flex; flex-direction: column; align-items: center; }
+.mdt-empty-icon { font-size: 1.5rem; }
+.mdt-empty-text { margin-top: 4px; font-size: .8rem; }
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-} */
+/* ----- MapView ----- */
+.map-container { width: 100%; height: 100%; position: relative; }
+.cursor-draw { cursor: crosshair; }
+.cursor-add { cursor: copy; }
+.cursor-edit { cursor: move; }
+.cursor-grab { cursor: grab; }
+.map-marker { font-size: 28px; cursor: pointer; }
+.map-vertex { font-size: 16px; color: red; cursor: move; text-shadow: 0 0 2px #fff; }

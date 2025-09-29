@@ -1,3 +1,4 @@
+// MapView.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Map, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -5,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MapObject } from "../types/object.type";
 import type { Polygon } from "../types/polygon.type";
 import { getEmojiForType } from "./MapUtils";
+import "../App.css";
 
 type Props = {
   polygons: Polygon[];
@@ -37,18 +39,15 @@ const MapView = ({
   isDeletingObjects,
   onDeleteObject,
 }: Props) => {
-  const mapRef = useRef<Map | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<Marker[]>([]);
-  const vertexMarkersRef = useRef<Marker[]>([]);
-  const [ready, setReady] = useState(false);
-  const [coords, setCoords] = useState<[number, number][]>([]);
-  const [draggingVertex, setDraggingVertex] = useState<{
-    polyIndex: number;
-    vertexIndex: number;
-  } | null>(null);
+  const mapRef = useRef<Map | null>(null);          // שמירת מופע המפה
+  const containerRef = useRef<HTMLDivElement>(null); // אלמנט ה־DOM שבו נטען המפה
+  const markersRef = useRef<Marker[]>([]);          // שמירת כל ה־markers של אובייקטים
+  const vertexMarkersRef = useRef<Marker[]>([]);    // markers לנקודות עריכה של פוליגון
+  const [ready, setReady] = useState(false);        // מצב טעינת המפה
+  const [coords, setCoords] = useState<[number, number][]>([]); // נקודות בזמן ציור פוליגון
+  const [draggingVertex, setDraggingVertex] = useState<{ polyIndex: number; vertexIndex: number } | null>(null);
 
-  // יצירת המפה
+  // יצירת המפה והגדרות בסיסיות
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -57,19 +56,9 @@ const MapView = ({
       style: {
         version: 8,
         sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-          },
+          osm: { type: "raster", tiles: ["https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256 },
         },
-        layers: [
-          {
-            id: "osm",
-            type: "raster",
-            source: "osm",
-          },
-        ],
+        layers: [{ id: "osm", type: "raster", source: "osm" }],
       },
       center: [34.78, 32.07],
       zoom: 12,
@@ -81,147 +70,90 @@ const MapView = ({
     return () => {
       markersRef.current.forEach((m) => m.remove());
       vertexMarkersRef.current.forEach((m) => m.remove());
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      map.remove();
+      mapRef.current = null;
     };
   }, []);
 
-  // 🔥 פונקציה משופרת לעדכון שכבות - עדכון במקום מחיקה ויצירה
-  const updateOrCreateLayer = useCallback(
-    (id: string, data: any, layer: any) => {
-      const m = mapRef.current;
-      if (!m || !ready) return;
+  // פונקציה גנרית: יצירה או עדכון של שכבה קיימת
+  const updateOrCreateLayer = useCallback((id: string, data: any, layer: any) => {
+    const m = mapRef.current;
+    if (!m || !ready) return;
+    if (m.getSource(id)) {
+      const source = m.getSource(id) as any;
+      if (source?.setData) source.setData(data);
+      return;
+    }
+    if (m.getLayer(id)) m.removeLayer(id);
+    if (m.getSource(id)) m.removeSource(id);
+    m.addSource(id, { type: "geojson", data });
+    m.addLayer({ id, source: id, ...layer });
+  }, [ready]);
 
-      // אם המקור קיים, עדכן רק את הנתונים
-      if (m.getSource(id)) {
-        const source = m.getSource(id) as any;
-        if (source && typeof source.setData === 'function') {
-          source.setData(data);
-          return;
-        }
-      }
+  // עדכון פוליגונים על המפה
+  const updatePolygonsOnMap = useCallback((polygonsToUpdate: Polygon[]) => {
+    if (!ready) return;
+    updateOrCreateLayer("polygons", {
+      type: "FeatureCollection",
+      features: polygonsToUpdate.map((p) => ({
+        type: "Feature",
+        properties: { id: p.id },
+        geometry: { type: "Polygon", coordinates: p.coordinates },
+      })),
+    }, { type: "fill", paint: { "fill-color": "#3b82f6", "fill-opacity": 0.3 } });
+  }, [ready, updateOrCreateLayer]);
 
-      // אחרת, צור מחדש
-      if (m.getLayer(id)) m.removeLayer(id);
-      if (m.getSource(id)) m.removeSource(id);
-
-      m.addSource(id, { type: "geojson", data });
-      m.addLayer({ id, source: id, ...layer });
-    },
-    [ready]
-  );
-
-  // עדכון פוליגונים על המפה - משתמש בפונקציה המשופרת
-  const updatePolygonsOnMap = useCallback(
-    (polygonsToUpdate: Polygon[]) => {
-      if (!ready) return;
-
-      updateOrCreateLayer(
-        "polygons",
-        {
-          type: "FeatureCollection",
-          features: polygonsToUpdate.map((p) => ({
-            type: "Feature",
-            properties: { id: p.id },
-            geometry: {
-              type: "Polygon",
-              coordinates: p.coordinates,
-            },
-          })),
-        },
-        {
-          type: "fill",
-          paint: {
-            "fill-color": "#3b82f6",
-            "fill-opacity": 0.3,
-          },
-        }
-      );
-    },
-    [ready, updateOrCreateLayer]
-  );
-
-  // עדכון markers לקודקודים בעריכה
+  // עדכון נקודות עריכה (vertex markers) בעת מצב עריכה
   const updateVertexMarkers = useCallback(() => {
     const map = mapRef.current;
     if (!map || !ready || !isEditing) return;
-
-    // נקה markers קודמים
     vertexMarkersRef.current.forEach((m) => m.remove());
     vertexMarkersRef.current = [];
-
-    // הוסף markers לקודקודים
     polygons.forEach((polygon) => {
       polygon.coordinates?.[0]?.forEach((vertex) => {
         const el = document.createElement("div");
         el.innerHTML = "●";
-        el.style.fontSize = "16px";
-        el.style.color = "#ff0000";
-        el.style.cursor = "move";
-        el.style.textShadow = "0 0 2px white";
-
-        const marker = new Marker({ element: el })
-          .setLngLat(vertex as [number, number])
-          .addTo(map);
-
+        el.className = "map-vertex"; // CSS
+        const marker = new Marker({ element: el }).setLngLat(vertex as [number, number]).addTo(map);
         vertexMarkersRef.current.push(marker);
       });
     });
   }, [polygons, ready, isEditing]);
 
-  // האזנה לקליקים וגרירה
+  // האזנה לאירועים: ציור, הוספה, עריכה וגרירה
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
+    // קליק על המפה
     const click = (e: any) => {
       const p: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-
       if (isDrawing) {
+        // סיום פוליגון אם חוזרים לנקודה הראשונה
         if (coords.length > 2) {
           const [x1, y1] = coords[0];
           const [x2, y2] = p;
           if (Math.hypot(x1 - x2, y1 - y2) < 0.001) {
-            onFinishPolygon({
-              id: "local-" + crypto.randomUUID(),
-              name: "Polygon",
-              coordinates: [[...coords, coords[0]]],
-            });
+            onFinishPolygon({ id: "local-" + crypto.randomUUID(), name: "Polygon", coordinates: [[...coords, coords[0]]] });
             setCoords([]);
             return;
           }
         }
         setCoords((prev) => [...prev, p]);
       } else if (isAddingObject && onAddObject && objectType) {
-        onAddObject({
-          id: "local-" + crypto.randomUUID(),
-          type: objectType,
-          coordinates: p,
-        });
+        // הוספת אובייקט חדש
+        onAddObject({ id: "local-" + crypto.randomUUID(), type: objectType, coordinates: p });
       }
     };
 
+    // התחלת גרירה של נקודת פוליגון
     const onDragStart = (e: any) => {
       if (!isEditing) return;
-
       const point = [e.lngLat.lng, e.lngLat.lat];
-
       for (let polyIndex = 0; polyIndex < polygons.length; polyIndex++) {
-        const polygon = polygons[polyIndex];
-        for (
-          let vertexIndex = 0;
-          vertexIndex < polygon.coordinates[0].length;
-          vertexIndex++
-        ) {
-          const vertex = polygon.coordinates[0][vertexIndex];
-          const distance = Math.hypot(
-            vertex[0] - point[0],
-            vertex[1] - point[1]
-          );
-
-          if (distance < 0.001) {
+        for (let vertexIndex = 0; vertexIndex < polygons[polyIndex].coordinates[0].length; vertexIndex++) {
+          const vertex = polygons[polyIndex].coordinates[0][vertexIndex];
+          if (Math.hypot(vertex[0] - point[0], vertex[1] - point[1]) < 0.001) {
             setDraggingVertex({ polyIndex, vertexIndex });
             map.dragPan.disable();
             return;
@@ -230,46 +162,22 @@ const MapView = ({
       }
     };
 
+    // תוך כדי גרירה: עדכון נקודה
     const onDrag = (e: any) => {
       if (!draggingVertex || !isEditing) return;
-
       const newPoint: [number, number] = [e.lngLat.lng, e.lngLat.lat];
       const { polyIndex, vertexIndex } = draggingVertex;
       const polygonId = polygons[polyIndex].id;
-
-      // צור עותק של הקואורדינטות
-      const newCoordinates = [...polygons[polyIndex].coordinates[0]] as [
-        number,
-        number
-      ][];;
+      const newCoordinates = [...polygons[polyIndex].coordinates[0]];
       newCoordinates[vertexIndex] = newPoint;
+      onUpdatePolygon(polygonId, newCoordinates as [number, number][]);
+    };
 
-//       // עדכן את הקומפוננט ההורה מיידית
-//  const newCoordinates = polygons[polyIndex].coordinates[0] as [
-//         number,
-//         number
-//       ][];
-
-      onUpdatePolygon(polygonId, newCoordinates);    };
-
+    // סוף גרירה
     const onDragEnd = () => {
       if (!draggingVertex) return;
-
-      const { polyIndex } = draggingVertex;
-      const polygonId = polygons[polyIndex].id;
-
-      // קבל את הקואורדינטות המעודכנות מהמפה
-      const currentPolygons = [...polygons];
-      const newCoordinates = currentPolygons[polyIndex].coordinates[0] as [
-        number,
-        number
-      ][];
-
-      // שלח את הקואורדינטות המעודכנות להורה
-      onUpdatePolygon(polygonId, newCoordinates);
-
       setDraggingVertex(null);
-      map?.dragPan.enable();
+      map.dragPan.enable();
     };
 
     map.on("click", click);
@@ -278,111 +186,60 @@ const MapView = ({
     map.on("mouseup", onDragEnd);
 
     return () => {
-      if (map) {
-        map.off("click", click);
-        map.off("mousedown", onDragStart);
-        map.off("mousemove", onDrag);
-        map.off("mouseup", onDragEnd);
-      }
+      map.off("click", click);
+      map.off("mousedown", onDragStart);
+      map.off("mousemove", onDrag);
+      map.off("mouseup", onDragEnd);
     };
-  }, [
-    coords,
-    isDrawing,
-    isAddingObject,
-    isEditing,
-    draggingVertex,
-    onFinishPolygon,
-    onAddObject,
-    objectType,
-    ready,
-    polygons,
-    onUpdatePolygon,
-    updatePolygonsOnMap,
-  ]);
+  }, [coords, isDrawing, isAddingObject, isEditing, draggingVertex, onFinishPolygon, onAddObject, objectType, ready, polygons, onUpdatePolygon]);
 
-  // 🔥 עדכון פוליגונים - מופרד מ-preview
-  useEffect(() => {
-    if (!ready) return;
-    updatePolygonsOnMap(polygons);
-  }, [polygons, ready, updatePolygonsOnMap]);
+  // עדכון פוליגונים קיימים
+  useEffect(() => { if (ready) updatePolygonsOnMap(polygons); }, [polygons, ready, updatePolygonsOnMap]);
 
-  // 🔥 עדכון preview בנפרד
+  // עדכון preview בזמן ציור
   useEffect(() => {
     const m = mapRef.current;
     if (!m || !ready) return;
-
     if (isDrawing && coords.length) {
-      updateOrCreateLayer(
-        "preview",
-        {
-          type: "FeatureCollection",
-          features: [
-            {
-              type: "Feature",
-              geometry: {
-                type: "LineString",
-                coordinates: coords,
-              },
-            },
-          ],
-        },
-        {
-          type: "line",
-          paint: {
-            "line-color": "#22c55e",
-            "line-width": 2,
-          },
-        }
-      );
+      updateOrCreateLayer("preview", {
+        type: "FeatureCollection",
+        features: [{ type: "Feature", geometry: { type: "LineString", coordinates: coords } }],
+      }, { type: "line", paint: { "line-color": "#22c55e", "line-width": 2 } });
     } else {
       if (m.getLayer("preview")) m.removeLayer("preview");
       if (m.getSource("preview")) m.removeSource("preview");
     }
   }, [coords, isDrawing, ready, updateOrCreateLayer]);
 
-  // 🔥 עדכון vertex markers בנפרד
+  // עדכון markers של נקודות עריכה
   useEffect(() => {
-    if (isEditing) {
-      updateVertexMarkers();
-    } else {
+    if (isEditing) updateVertexMarkers();
+    else {
       vertexMarkersRef.current.forEach((m) => m.remove());
       vertexMarkersRef.current = [];
     }
   }, [isEditing, updateVertexMarkers]);
 
-  // עדכון markers לאובייקטים
+  // עדכון markers לאובייקטים (עם emoji)
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
-
     objects.forEach((o) => {
       const el = document.createElement("div");
       el.innerHTML = getEmojiForType(o.type);
-      el.style.fontSize = "28px";
-      el.style.cursor = "pointer";
-
-      const marker = new Marker({ element: el })
-        .setLngLat(o.coordinates)
-        .addTo(map);
-
+      el.className = "map-marker"; // CSS
+      const marker = new Marker({ element: el }).setLngLat(o.coordinates).addTo(map);
       markersRef.current.push(marker);
-
-      el.onclick = () => {
-        if (isDeletingObjects) {
-          onDeleteObject?.(o.id);
-        }
-      };
+      el.onclick = () => { if (isDeletingObjects) onDeleteObject?.(o.id); };
     });
   }, [objects, ready, isDeletingObjects, onDeleteObject]);
 
-  // האזנה למחיקת פוליגונים
+  // האזנה למחיקת פוליגונים בלחיצה
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-
     const handleDeleteClick = (e: any) => {
       if (!isDeleting) return;
       const feature = e.features?.[0];
@@ -391,34 +248,12 @@ const MapView = ({
         if (polygonId) onDeletePolygon?.(polygonId);
       }
     };
-
-    if (map.getLayer("polygons")) {
-      map.on("click", "polygons", handleDeleteClick);
-    }
-
-    return () => {
-      const map = mapRef.current;
-      if (map && map.getLayer("polygons")) {
-        map.off("click", "polygons", handleDeleteClick);
-      }
-    };
+    if (map.getLayer("polygons")) map.on("click", "polygons", handleDeleteClick);
+    return () => { if (map?.getLayer("polygons")) map.off("click", "polygons", handleDeleteClick); };
   }, [ready, isDeleting, onDeletePolygon]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: "100%",
-        height: "100%",
-        cursor: isDrawing
-          ? "crosshair"
-          : isAddingObject
-          ? "copy"
-          : isEditing
-          ? "move"
-          : "grab",
-      }}
-    />
+    <div ref={containerRef} className={`map-container ${isDrawing ? "cursor-draw" : isAddingObject ? "cursor-add" : isEditing ? "cursor-edit" : "cursor-grab"}`} />
   );
 };
 

@@ -1,3 +1,4 @@
+// MapDataTable.tsx
 import { Delete } from "@mui/icons-material";
 import {
   Box,
@@ -14,25 +15,19 @@ import {
 import { serverApi } from "../api/api";
 import type { MapObject } from "../types/object.type";
 import type { Polygon } from "../types/polygon.type";
+import "../App.css";
 
 type Props = {
   polygons: Polygon[];
   objects: MapObject[];
   setPolygons: React.Dispatch<React.SetStateAction<Polygon[]>>;
   setObjects: React.Dispatch<React.SetStateAction<MapObject[]>>;
-  setObjectType?: (type: string) => void; // אופציונלי
 };
 
-const MapDataTable = ({
-  polygons,
-  objects,
-  setPolygons,
-  setObjects,
-}: Props) => {
+const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => {
   const truncateText = (text: string, maxLength = 15) =>
     text.length <= maxLength ? text : text.substring(0, maxLength) + "...";
 
-  // ✅ מחיקת אובייקט מהשרת ומהסטייט
   const handleDeleteObject = async (id: string) => {
     try {
       await serverApi.deleteObject(id);
@@ -42,7 +37,6 @@ const MapDataTable = ({
     }
   };
 
-  // ✅ מחיקת פוליגון מהשרת ומהסטייט
   const handleDeletePolygon = async (id: string) => {
     try {
       await serverApi.deletePolygon(id);
@@ -53,60 +47,26 @@ const MapDataTable = ({
   };
 
   return (
-    <Box sx={{ width: "100%", height: "100%", overflow: "hidden" }}>
-      <Typography
-        variant="h6"
-        gutterBottom
-        sx={{ color: "primary.main", fontWeight: "bold", fontSize: "1rem" }}
-      >
+    <Box className="mdt-root">
+      <Typography variant="h6" gutterBottom className="mdt-title">
         📊 Map Data
       </Typography>
 
-      <Box sx={{ height: "calc(100% - 40px)", overflow: "auto" }}>
-        <Table
-          size="small"
-          sx={{
-            "& .MuiTableCell-root": {
-              py: 0.8,
-              fontSize: "0.75rem",
-              maxWidth: "120px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            },
-            tableLayout: "fixed",
-          }}
-        >
+      <Box className="mdt-container">
+        <Table size="small" className="mdt-table">
           <TableHead>
-            <TableRow sx={{ backgroundColor: "grey.100" }}>
-              <TableCell sx={{ fontWeight: "bold", width: "25%" }}>
-                Name/ID
-              </TableCell>
-              <TableCell sx={{ fontWeight: "bold", width: "15%" }}>
-                Lat
-              </TableCell>
-              <TableCell sx={{ fontWeight: "bold", width: "15%" }}>
-                Lon
-              </TableCell>
-              <TableCell sx={{ fontWeight: "bold", width: "10%" }}>
-                Actions
-              </TableCell>
+            <TableRow className="mdt-header">
+              <TableCell className="mdt-th">Name/ID</TableCell>
+              <TableCell className="mdt-th">Lat</TableCell>
+              <TableCell className="mdt-th">Lon</TableCell>
+              <TableCell className="mdt-th">Actions</TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {/* אובייקטים */}
             {objects.map((object) => (
-              <TableRow
-                key={`object-${object.id}`}
-                sx={{
-                  "&:hover": { backgroundColor: "action.hover" },
-                  "&:last-child td": { borderBottom: 0 },
-                }}
-              >
-                <TableCell
-                  sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
-                >
+              <TableRow key={`object-${object.id}`} className="mdt-row">
+                <TableCell className="mdt-mono">
                   <Tooltip title={object.id} arrow>
                     <span>{truncateText(object.id, 12)}</span>
                   </Tooltip>
@@ -119,13 +79,7 @@ const MapDataTable = ({
                       size="small"
                       color="error"
                       onClick={() => handleDeleteObject(object.id)}
-                      sx={{
-                        "&:hover": {
-                          backgroundColor: "error.light",
-                          color: "white",
-                        },
-                        transition: "all 0.2s",
-                      }}
+                      className="mdt-delete-btn"
                     >
                       <Delete fontSize="small" />
                     </IconButton>
@@ -134,41 +88,22 @@ const MapDataTable = ({
               </TableRow>
             ))}
 
-            {/* פוליגונים */}
             {polygons.map((polygon, index) => (
-              <TableRow
-                key={`polygon-${polygon.id}-${index}`}
-                sx={{
-                  "&:hover": { backgroundColor: "action.hover" },
-                  "&:last-child td": { borderBottom: 0 },
-                }}
-              >
+              <TableRow key={`polygon-${polygon.id}-${index}`} className="mdt-row">
                 <TableCell>
-                  <Chip
-                    label="Polygon"
-                    size="small"
-                    color="secondary"
-                    variant="outlined"
-                    sx={{ fontSize: "0.7rem" }}
-                  />
+                  <Chip label="Polygon" size="small" color="secondary" variant="outlined" className="mdt-chip" />
                 </TableCell>
-                <TableCell
-                  sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
-                >
+                <TableCell className="mdt-mono">
                   <Tooltip title={polygon.name || polygon.id} arrow>
                     <span>{truncateText(polygon.name || polygon.id, 12)}</span>
                   </Tooltip>
                 </TableCell>
                 <TableCell colSpan={2}>
                   <Chip
-                    label={`${
-                      polygon?.coordinates && polygon.coordinates.length > 0
-                        ? polygon.coordinates[0].length
-                        : 0
-                    } pts`}
+                    label={`${polygon?.coordinates?.[0]?.length || 0} pts`}
                     size="small"
                     variant="filled"
-                    sx={{ fontSize: "0.65rem", bgcolor: "grey.300" }}
+                    className="mdt-chip-count"
                   />
                 </TableCell>
                 <TableCell>
@@ -177,13 +112,7 @@ const MapDataTable = ({
                       size="small"
                       color="error"
                       onClick={() => handleDeletePolygon(polygon.id)}
-                      sx={{
-                        "&:hover": {
-                          backgroundColor: "error.light",
-                          color: "white",
-                        },
-                        transition: "all 0.2s",
-                      }}
+                      className="mdt-delete-btn"
                     >
                       <Delete fontSize="small" />
                     </IconButton>
@@ -192,26 +121,12 @@ const MapDataTable = ({
               </TableRow>
             ))}
 
-            {/* אין נתונים */}
             {objects.length === 0 && polygons.length === 0 && (
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  align="center"
-                  sx={{ py: 2, color: "text.secondary" }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}
-                  >
-                    <span style={{ fontSize: "1.5rem" }}>📭</span>
-                    <Typography
-                      variant="body2"
-                      sx={{ mt: 0.5, fontSize: "0.8rem" }}
-                    >
+                <TableCell colSpan={5} align="center" className="mdt-empty">
+                  <Box className="mdt-empty-box">
+                    <span className="mdt-empty-icon">📭</span>
+                    <Typography variant="body2" className="mdt-empty-text">
                       No data available
                     </Typography>
                   </Box>
