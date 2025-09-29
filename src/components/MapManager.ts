@@ -31,24 +31,17 @@ export const initializeMap = (
 
 export const updateOrCreateLayer = (
   map: Map,
-  id: string, 
-  data: any, 
+  id: string,
+  data: any ,
   layer: any
 ): void => {
-  // יצירה או עדכון של שכבה במפה - אם השכבה קיימת מעדכן את המידע, אם לא יוצר חדש
   if (map.getSource(id)) {
-    const source = map.getSource(id) as any;
-    if (source?.setData) source.setData(data);
-    return;
+    const source = map.getSource(id) as maplibregl.GeoJSONSource;
+    source.setData(data);
+  } else {
+    map.addSource(id, { type: "geojson", data });
+    map.addLayer({ id, source: id, ...layer });
   }
-  
-  // אם השכבה קיימת - מסיר אותה לפני יצירה חדשה
-  if (map.getLayer(id)) map.removeLayer(id);
-  if (map.getSource(id)) map.removeSource(id);
-  
-  // יצירת מקור ושכבה חדשים
-  map.addSource(id, { type: "geojson", data });
-  map.addLayer({ id, source: id, ...layer });
 };
 
 export const removeLayer = (map: Map, id: string): void => {
@@ -132,13 +125,17 @@ export const createObjectMarker = (
 
 export const createVertexMarker = (
   map: Map,
-  vertex: [number, number]
+  vertex: [number, number],
+  options?: { color?: string }
 ): Marker => {
-  // יצירת marker לנקודת עריכה (vertex) של פוליגון - נקודה כחולה קטנה
+  // יצירת marker עגול קטן
   const el = document.createElement("div");
-  el.innerHTML = "●";
-  el.className = "map-vertex";
-  
+  el.style.width = "10px";
+  el.style.height = "10px";
+  el.style.borderRadius = "50%";
+  el.style.backgroundColor = options?.color ?? "blue"; // ברירת מחדל כחול לעריכה
+  el.style.border = "2px solid white"; // שיהיה קונטרסט ברור
+
   return new Marker({ element: el })
     .setLngLat(vertex)
     .addTo(map);

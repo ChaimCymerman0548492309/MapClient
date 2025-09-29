@@ -87,15 +87,26 @@ const PolygonPanel = ({
     }
   };
 
-  const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-    if (isDrawing) setIsDrawing(false);
+  // פונקציה מרכזית לניהול מצבים - כל לחיצה מכבה את השאר
+  const handleModeToggle = (mode: 'draw' | 'edit' | 'delete') => {
+    // כבה את כל המצבים
+    setIsDrawing(false);
+    setIsEditing(false);
+    setIsDeleting(false);
+    
+    // הדלק רק את המצב הנבחר אם הוא לא כבר פעיל
+    if (mode === 'draw' && !isDrawing) setIsDrawing(true);
+    if (mode === 'edit' && !isEditing) setIsEditing(true);
+    if (mode === 'delete' && !isDeleting) setIsDeleting(true);
   };
 
   const newCount = polygons.filter((p) => p.id.startsWith("local-")).length;
   const editedCount = editedPolygons.size;
   const deletedCount = deletedPolygons.size;
   const totalUnsaved = newCount + editedCount + deletedCount;
+
+  // בדיקה אם יש מצב פעיל כלשהו
+  const hasActiveMode = isDrawing || isEditing || isDeleting;
 
   return (
     <Paper className="pp-root" square>
@@ -123,8 +134,8 @@ const PolygonPanel = ({
           variant={isDrawing ? "contained" : "outlined"}
           color={isDrawing ? "warning" : "primary"}
           size="small"
-          onClick={() => setIsDrawing(!isDrawing)}
-          disabled={isEditing}
+          onClick={() => handleModeToggle('draw')}
+          disabled={hasActiveMode && !isDrawing}
           className="pp-btn"
         >
           {isDrawing ? "Stop Draw Mode" : "Draw Mode"}
@@ -134,8 +145,8 @@ const PolygonPanel = ({
           variant={isEditing ? "contained" : "outlined"}
           color={isEditing ? "warning" : "primary"}
           size="small"
-          onClick={handleEditToggle}
-          disabled={isDrawing}
+          onClick={() => handleModeToggle('edit')}
+          disabled={hasActiveMode && !isEditing}
           className="pp-btn"
         >
           {isEditing ? "Stop Edit Mode" : "Edit Mode"}
@@ -146,7 +157,7 @@ const PolygonPanel = ({
           color="success"
           size="small"
           onClick={handleSave}
-          disabled={totalUnsaved === 0 || saveStatus === "saving"}
+          disabled={totalUnsaved === 0 || saveStatus === "saving" }
           className="pp-btn"
         >
           Save ({totalUnsaved})
@@ -156,12 +167,8 @@ const PolygonPanel = ({
           variant={isDeleting ? "contained" : "outlined"}
           color={isDeleting ? "warning" : "error"}
           size="small"
-          onClick={() => {
-            setIsDeleting(!isDeleting);
-            if (isDrawing) setIsDrawing(false);
-            if (isEditing) setIsEditing(false);
-          }}
-          disabled={polygons.length === 0}
+          onClick={() => handleModeToggle('delete')}
+          disabled={(polygons.length === 0) || (hasActiveMode && !isDeleting)}
           className="pp-btn"
         >
           {isDeleting ? "Cancel Delete Mode" : "Delete Mode"}
