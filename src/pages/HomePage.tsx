@@ -2,13 +2,14 @@
 import { Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { serverApi } from "../api/api";
+import "../App.css";
 import MapDataTable from "../components/MapDataTable";
+import { closeRing } from "../components/MapUtils";
 import MapView from "../components/MapView";
 import ObjectsPanel from "../components/ObjectsPanel";
 import PolygonPanel from "../components/PolygonPanel";
 import type { MapObject, MapObjectApiResponse } from "../types/object.type";
 import type { Polygon, PolygonApiResponse } from "../types/polygon.type";
-import "../App.css";
 
 const HomePage = () => {
   const [polygons, setPolygons] = useState<Polygon[]>([]);
@@ -19,7 +20,9 @@ const HomePage = () => {
   const [objectType, setObjectType] = useState("Marker");
   const [editedPolygons, setEditedPolygons] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(new Set());
+  const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(
+    new Set()
+  );
   const [isDeletingObjects, setIsDeletingObjects] = useState(false);
   const [deletedObjects, setDeletedObjects] = useState<Set<string>>(new Set());
 
@@ -32,7 +35,10 @@ const HomePage = () => {
             id: p.id,
             name: p.name,
             coordinates: [
-              p.geometry.coordinates.exterior.positions.map((pos) => [pos.values[0], pos.values[1]]),
+              p.geometry.coordinates.exterior.positions.map((pos) => [
+                pos.values[0],
+                pos.values[1],
+              ]),
             ],
           }))
         );
@@ -42,7 +48,10 @@ const HomePage = () => {
           objRes.map((o) => ({
             id: o.id,
             type: o.type,
-            coordinates: [o.location.coordinates.longitude, o.location.coordinates.latitude],
+            coordinates: [
+              o.location.coordinates.longitude,
+              o.location.coordinates.latitude,
+            ],
           }))
         );
       } catch (err) {
@@ -55,7 +64,9 @@ const HomePage = () => {
     <div className="hp-root">
       <div className="hp-left">
         <Paper className="hp-paper" square>
-          <Typography variant="h6" className="hp-header">Map</Typography>
+          <Typography variant="h6" className="hp-header">
+            Map
+          </Typography>
           <div className="hp-map">
             <MapView
               polygons={polygons}
@@ -66,13 +77,23 @@ const HomePage = () => {
               isEditing={isEditing}
               isDeleting={isDeleting}
               onFinishPolygon={(poly) => {
-                setPolygons((prev) => [...prev, poly]);
+                const ring: [number, number][] = poly.coordinates[0] as [
+                  number,
+                  number
+                ][];
+                const fixed = { ...poly, coordinates: [closeRing(ring)] };
+                setPolygons((prev) => [...prev, fixed]);
                 setIsDrawing(false);
               }}
               onAddObject={(obj) => setObjects((prev) => [...prev, obj])}
-              onUpdatePolygon={(polygonId, newRing) => {
+              onUpdatePolygon={(polygonId, newRing: [number, number][]) => {
+                const fixedRing = closeRing(newRing);
                 setPolygons((prev) =>
-                  prev.map((poly) => (poly.id === polygonId ? { ...poly, coordinates: [newRing] } : poly))
+                  prev.map((poly) =>
+                    poly.id === polygonId
+                      ? { ...poly, coordinates: [fixedRing] }
+                      : poly
+                  )
                 );
                 setEditedPolygons((prev) => new Set(prev).add(polygonId));
               }}

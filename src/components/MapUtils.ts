@@ -27,3 +27,15 @@ export const createMarkerElement = (obj: MapObject, emoji: string): HTMLDivEleme
   el.onmouseleave = () => (el.firstElementChild as HTMLElement).style.transform = "scale(1)";
   return el;
 };
+
+
+
+export function closeRing(coords: Array<[number, number]>): Array<[number, number]> {
+  if (coords.length === 0) return coords;
+  const [first] = coords;
+  const last = coords[coords.length - 1];
+  if (first[0] !== last[0] || first[1] !== last[1]) {
+    return [...coords, first];
+  }
+  return coords;
+}
