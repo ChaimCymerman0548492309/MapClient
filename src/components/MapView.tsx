@@ -6,16 +6,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "../App.css";
 
 // hooks לוגיקה חיצונית
+import { useMapDeleting } from "../hooks/useMapDeleting";
 import { useMapDrawing } from "../hooks/useMapDrawing";
 import { useMapEditing } from "../hooks/useMapEditing";
 import { useMapObjects } from "../hooks/useMapObjects";
-import { useMapDeleting } from "../hooks/useMapDeleting";
 
 // טיפוסי נתונים
 import type { MapObject } from "../types/object.type";
 import type { Polygon } from "../types/polygon.type";
 
 // פונקציות עזר לניהול maplibre
+import { usePolygonSelection } from "../hooks/usePolygonSelection";
 import {
   cleanupMap,
   createObjectMarker,
@@ -38,6 +39,7 @@ type Props = {
   onUpdatePolygon: (polygonId: string, newRing: [number, number][]) => void;
   onDeletePolygon?: (id: string) => void;
   isDeletingObjects?: boolean;
+  isSelectingPolygon?: boolean;
   onDeleteObject?: (id: string) => void;
 };
 
@@ -55,6 +57,7 @@ const MapView = ({
   onDeletePolygon,
   isDeletingObjects,
   onDeleteObject,
+  isSelectingPolygon,
 }: Props) => {
   /**
    * refs – אחסון reference למפה ול־markers
@@ -136,7 +139,11 @@ const MapView = ({
    */
   useEffect(() => {
     if (ready && mapRef.current) {
-      updatePolygonsLayer(mapRef.current, polygons);
+      // ננקה פוליגונים לא תקינים
+      const safePolygons = polygons.filter(
+        (p) => p.coordinates?.[0]?.length >= 4 // מינימום 3 נקודות + חזרה להתחלה
+      );
+      updatePolygonsLayer(mapRef.current, safePolygons);
     }
   }, [polygons, ready]);
 
@@ -191,6 +198,19 @@ const MapView = ({
     if (isEditing) return "cursor-edit";
     return "cursor-grab";
   };
+  usePolygonSelection({
+    mapRef,
+    ready,
+    isSelecting: isSelectingPolygon || false,
+    polygons,
+    objects,
+    onSelect: (polyId, inside) => {
+      console.log("פוליגון נבחר:", polyId, "אובייקטים בפנים:", inside);
+      // setObjects((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id)));
+      // TODO
+      // כאן אפשר להחליט אם למחוק אותם או לפתוח פאנל עם רשימה
+    },
+  });
 
   return (
     <div ref={containerRef} className={`map-container ${getCursorClass()}`} />

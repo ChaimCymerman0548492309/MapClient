@@ -1,5 +1,5 @@
 // HomePage.tsx
-import { Paper, Typography } from "@mui/material";
+import { Button, Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { serverApi } from "../api/api";
 import "../App.css";
@@ -25,6 +25,7 @@ const HomePage = () => {
   );
   const [isDeletingObjects, setIsDeletingObjects] = useState(false);
   const [deletedObjects, setDeletedObjects] = useState<Set<string>>(new Set());
+  const [isSelectingPolygon, setIsSelectingPolygon] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -63,6 +64,10 @@ const HomePage = () => {
   return (
     <div className="hp-root">
       <div className="hp-left">
+        <Button onClick={() => setIsSelectingPolygon((prev) => !prev)}>
+          {isSelectingPolygon ? "בטל בחירה" : "בחר פוליגון"}
+        </Button>
+
         <Paper className="hp-paper" square>
           <Typography variant="h6" className="hp-header">
             Map
@@ -76,12 +81,17 @@ const HomePage = () => {
               objectType={objectType}
               isEditing={isEditing}
               isDeleting={isDeleting}
+              isSelectingPolygon={isSelectingPolygon}
               onFinishPolygon={(poly) => {
                 const ring: [number, number][] = poly.coordinates[0] as [
                   number,
                   number
                 ][];
-                const fixed = { ...poly, coordinates: [closeRing(ring)] };
+                const fixed = {
+                  ...poly,
+                  id: "local-" + crypto.randomUUID(), // תמיד ייחודי
+                  coordinates: [closeRing(ring)], // לוודא סגירה
+                };
                 setPolygons((prev) => [...prev, fixed]);
                 setIsDrawing(false);
               }}

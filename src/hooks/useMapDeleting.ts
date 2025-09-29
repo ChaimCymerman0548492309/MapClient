@@ -17,7 +17,7 @@ export function useMapDeleting({
 }: Params) {
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    if (!map || !ready ||!mapRef.current) return;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlePolygonDeleteClick = (e: any) => {
