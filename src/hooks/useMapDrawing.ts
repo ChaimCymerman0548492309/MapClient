@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // hooks/useMapDrawing.ts
 import type { Map } from "maplibre-gl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createVertexMarker,
   updateDrawingPreview,
@@ -12,19 +12,18 @@ import type { Polygon } from "../types/polygon.type";
 type Params = {
   mapRef: React.MutableRefObject<Map | null>;
   isDrawing: boolean;
-  coords: [number, number][];
-  setCoords: React.Dispatch<React.SetStateAction<[number, number][]>>;
+
   onFinishPolygon: (polygon: Polygon) => void;
 };
 
 export function useMapDrawing({
   mapRef,
   isDrawing,
-  coords,
-  setCoords,
+
   onFinishPolygon,
 }: Params) {
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const [coords, setCoords] = useState<[number, number][]>([]);
 
   // קליקים – הוספת נקודות או סגירת הפוליגון
   useEffect(() => {

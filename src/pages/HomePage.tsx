@@ -95,7 +95,12 @@ const HomePage = () => {
                 setPolygons((prev) => [...prev, fixed]);
                 setIsDrawing(false);
               }}
-              onAddObject={(obj) => setObjects((prev) => [...prev, obj])}
+              onAddObject={(obj) =>
+                setObjects((prev) => {
+                  if (prev.some((o) => o.id === obj.id)) return prev; // כבר קיים
+                  return [...prev, obj];
+                })
+              }
               onUpdatePolygon={(polygonId, newRing: [number, number][]) => {
                 const fixedRing = closeRing(newRing);
                 setPolygons((prev) =>

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // hooks/useMapEditing.ts
-import { useEffect } from "react";
 import type { Map } from "maplibre-gl";
+import { useCallback, useEffect, useState } from "react";
 import type { Polygon } from "../types/polygon.type";
 
 type Dragging = { polyIndex: number; vertexIndex: number } | null;
@@ -11,9 +11,6 @@ type Params = {
   ready: boolean;
   isEditing?: boolean;
   polygons: Polygon[];
-  draggingVertex: Dragging;
-  setDraggingVertex: React.Dispatch<React.SetStateAction<Dragging>>;
-  findClickedVertex: (point: [number, number]) => Dragging;
   onUpdatePolygon: (polygonId: string, newRing: [number, number][]) => void;
 };
 
@@ -22,11 +19,36 @@ export function useMapEditing({
   ready,
   isEditing,
   polygons,
-  draggingVertex,
-  setDraggingVertex,
-  findClickedVertex,
+
   onUpdatePolygon,
 }: Params) {
+  const [draggingVertex, setDraggingVertex] = useState<{
+    polyIndex: number;
+    vertexIndex: number;
+  } | null>(null);
+
+  /**
+   * helper – find vertex near click
+   */
+  const findClickedVertex = useCallback(
+    (point: [number, number]): Dragging => {
+      for (let polyIndex = 0; polyIndex < polygons.length; polyIndex++) {
+        for (
+          let vertexIndex = 0;
+          vertexIndex < polygons[polyIndex].coordinates[0].length;
+          vertexIndex++
+        ) {
+          const vertex = polygons[polyIndex].coordinates[0][vertexIndex];
+          if (Math.hypot(vertex[0] - point[0], vertex[1] - point[1]) < 0.001) {
+            return { polyIndex, vertexIndex };
+          }
+        }
+      }
+      return null;
+    },
+    [polygons]
+  );
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
@@ -66,5 +88,14 @@ export function useMapEditing({
       map.off("mousemove", handleDrag);
       map.off("mouseup", handleDragEnd);
     };
-  }, [mapRef, ready, isEditing, polygons, draggingVertex, setDraggingVertex, findClickedVertex, onUpdatePolygon]);
+  }, [
+    mapRef,
+    ready,
+    isEditing,
+    polygons,
+    draggingVertex,
+    setDraggingVertex,
+    findClickedVertex,
+    onUpdatePolygon,
+  ]);
 }

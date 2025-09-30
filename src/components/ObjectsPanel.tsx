@@ -1,9 +1,18 @@
 // ObjectsPanel.tsx
-import { Alert, Box, Button, MenuItem, Paper, Select, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useState } from "react";
 import { serverApi } from "../api/api";
-import type { MapObject } from "../types/object.type";
 import "../App.css";
+import type { MapObject } from "../types/object.type";
 
 type Props = {
   objects: MapObject[];
@@ -30,7 +39,9 @@ const ObjectsPanel = ({
   setDeletedObjects,
   deletedObjects,
 }: Props) => {
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "success" | "error"
+  >("idle");
 
   const handleAddToggle = () => {
     setIsAdding(!isAdding);
@@ -45,8 +56,15 @@ const ObjectsPanel = ({
   const handleSave = async () => {
     try {
       setSaveStatus("saving");
-      for (const id of deletedObjects) if (!id.startsWith("local-")) await serverApi.deleteObject(id);
 
+      // מחיקות לשרת
+      for (const id of deletedObjects) {
+        if (!id.startsWith("local-")) {
+          await serverApi.deleteObject(id);
+        }
+      }
+
+      // הוספת חדשים
       const objectsToSave = objects.filter((o) => o.id.startsWith("local-"));
       const savedObjects = await Promise.all(
         objectsToSave.map((obj) =>
@@ -54,12 +72,19 @@ const ObjectsPanel = ({
         )
       );
 
-      setObjects((prev) =>
-        prev.map((o) => {
-          const saved = savedObjects.find((so) => so.type === o.type);
-          return saved ? { ...o, id: saved.id } : o;
-        })
-      );
+      // החלפת local- ב־id מהשרת לפי index
+      setObjects((prev) => {
+        const updated = prev.map((o) => {
+          if (o.id.startsWith("local-")) {
+            const idx = objectsToSave.findIndex((lo) => lo.id === o.id);
+            return savedObjects[idx] ? { ...o, id: savedObjects[idx].id } : o;
+          }
+          return o;
+        });
+        // סינון כפולים לפי id
+        const unique = new Map(updated.map((o) => [o.id, o]));
+        return Array.from(unique.values());
+      });
 
       setDeletedObjects(new Set());
       setSaveStatus("success");
@@ -76,14 +101,30 @@ const ObjectsPanel = ({
 
   return (
     <Paper className="op-root" square>
-      <Typography variant="subtitle1" className="op-title">🎯 Objects</Typography>
+      <Typography variant="subtitle1" className="op-title">
+        🎯 Objects
+      </Typography>
 
-      {saveStatus === "saving" && <Alert severity="info" className="op-alert">Saving…</Alert>}
-      {saveStatus === "success" && <Alert severity="success" className="op-alert">Saved!</Alert>}
-      {saveStatus === "error" && <Alert severity="error" className="op-alert">Error</Alert>}
+      {saveStatus === "saving" && (
+        <Alert severity="info" className="op-alert">
+          Saving…
+        </Alert>
+      )}
+      {saveStatus === "success" && (
+        <Alert severity="success" className="op-alert">
+          Saved!
+        </Alert>
+      )}
+      {saveStatus === "error" && (
+        <Alert severity="error" className="op-alert">
+          Error
+        </Alert>
+      )}
 
       <Box className="op-stats">
-        <Typography variant="caption" className="op-stat">📊 Total: {objects.length}</Typography>
+        <Typography variant="caption" className="op-stat">
+          📊 Total: {objects.length}
+        </Typography>
         <Typography
           variant="caption"
           color={totalPending ? "warning.main" : "success.main"}
@@ -91,8 +132,20 @@ const ObjectsPanel = ({
         >
           💾 Pending: {totalPending}
         </Typography>
-        {isDeletingObjects && <Typography variant="caption" color="warning.main" className="op-stat">🗑 Click to remove</Typography>}
-        {isAdding && <Typography variant="caption" color="info.main" className="op-stat">➕ Click map to add</Typography>}
+        {isDeletingObjects && (
+          <Typography
+            variant="caption"
+            color="warning.main"
+            className="op-stat"
+          >
+            🗑 Click to remove
+          </Typography>
+        )}
+        {isAdding && (
+          <Typography variant="caption" color="info.main" className="op-stat">
+            ➕ Click map to add
+          </Typography>
+        )}
       </Box>
 
       <Select
@@ -103,12 +156,24 @@ const ObjectsPanel = ({
         disabled={isDeletingObjects}
         className="op-select"
       >
-        <MenuItem value="Marker" className="op-option">📍 Marker</MenuItem>
-        <MenuItem value="Jeep" className="op-option">🚙 Jeep</MenuItem>
-        <MenuItem value="Ship" className="op-option">🚢 Ship</MenuItem>
-        <MenuItem value="Plane" className="op-option">✈️ Plane</MenuItem>
-        <MenuItem value="Tree" className="op-option">🌳 Tree</MenuItem>
-        <MenuItem value="Building" className="op-option">🏢 Building</MenuItem>
+        <MenuItem value="Marker" className="op-option">
+          📍 Marker
+        </MenuItem>
+        <MenuItem value="Jeep" className="op-option">
+          🚙 Jeep
+        </MenuItem>
+        <MenuItem value="Ship" className="op-option">
+          🚢 Ship
+        </MenuItem>
+        <MenuItem value="Plane" className="op-option">
+          ✈️ Plane
+        </MenuItem>
+        <MenuItem value="Tree" className="op-option">
+          🌳 Tree
+        </MenuItem>
+        <MenuItem value="Building" className="op-option">
+          🏢 Building
+        </MenuItem>
       </Select>
 
       <Stack direction="row" spacing={0.5} className="op-buttons">
