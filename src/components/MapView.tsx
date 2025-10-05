@@ -25,6 +25,8 @@ type Props = {
   isEditing?: boolean;
   isDeleting?: boolean;
   onFinishPolygon: (polygon: Polygon) => void;
+  setObjects?: React.Dispatch<React.SetStateAction<MapObject[]>>;
+
   onAddObject?: (obj: MapObject) => void;
   onUpdatePolygon: (polygonId: string, newRing: [number, number][]) => void;
   onDeletePolygon?: (id: string) => void;
@@ -48,6 +50,7 @@ const MapView = ({
   isDeletingObjects,
   onDeleteObject,
   isSelectingPolygon,
+  setObjects,
 }: Props) => {
   /** refs */
   const mapRef = useRef<Map | null>(null);
@@ -105,7 +108,7 @@ const MapView = ({
     objects,
     onSelect: (polyId, inside) => {
       console.log("Polygon clicked:", polyId, inside);
-      // setObjects((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id)));
+      setObjects!((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id)));
     },
   });
 

@@ -1,5 +1,7 @@
 // HomePage.tsx
-import { Button, Paper, Typography } from "@mui/material";
+import {
+  //  Button, 
+   Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import "../App.css";
@@ -28,7 +30,9 @@ const HomePage = () => {
   );
   const [isDeletingObjects, setIsDeletingObjects] = useState(false);
   const [deletedObjects, setDeletedObjects] = useState<Set<string>>(new Set());
-  const [isSelectingPolygon, setIsSelectingPolygon] = useState(false);
+  const [isSelectingPolygon, 
+    // setIsSelectingPolygon
+  ] = useState(false);
   const polygons2 = useSelector((state: RootState) => state.polygons.list);
   const objects2 = useSelector((state: RootState) => state.objects.list);
 
@@ -89,9 +93,9 @@ useEffect(() => {
   return (
     <div className="hp-root">
       <div className="hp-left">
-        <Button onClick={() => setIsSelectingPolygon((prev) => !prev)}>
+        {/* <Button onClick={() => setIsSelectingPolygon((prev) => !prev)}>
           {isSelectingPolygon ? "בטל בחירה" : "בחר פוליגון"}
-        </Button>
+        </Button> */}
 
         <Paper className="hp-paper" square>
           <Typography variant="h6" className="hp-header">
@@ -99,6 +103,7 @@ useEffect(() => {
           </Typography>
           <div className="hp-map">
             <MapView
+              setObjects={setObjects}
               polygons={polygons}
               objects={objects}
               isDrawing={isDrawing}
