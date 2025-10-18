@@ -1,17 +1,10 @@
 // PolygonPanel.tsx
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import { serverApi } from "../api/api";
 import "../App.css";
 import type { Polygon } from "../types/polygon.type";
+import { PolygonButton, StatusAlert ,  } from "../style/PolygonButton";
 
 type Props = {
   isDrawing: boolean;
@@ -47,6 +40,7 @@ const PolygonPanel = ({
   >("idle");
   const previousPolygonsRef = useRef<Polygon[]>([]);
 
+  // Track polygon changes for edit detection
   useEffect(() => {
     if (!previousPolygonsRef.current.length) {
       previousPolygonsRef.current = [...polygons];
@@ -69,18 +63,19 @@ const PolygonPanel = ({
     previousPolygonsRef.current = [...polygons];
   }, [polygons, setEditedPolygons, editedPolygons]);
 
+  // Save all changes to server
   const handleSave = async () => {
     try {
       setSaveStatus("saving");
 
-      // מחיקות
+      // Delete removed polygons
       await Promise.all(
         [...deletedPolygons]
           .filter((id) => !id.startsWith("local-"))
           .map((id) => serverApi.deletePolygon(id))
       );
 
-      // חדשים
+      // Create new polygons
       const savedNew = await Promise.all(
         polygons
           .filter((p) => p.id.startsWith("local-"))
@@ -89,11 +84,11 @@ const PolygonPanel = ({
               name: p.name,
               coordinates: p.coordinates,
             });
-            return { ...p, id: res.id }; // שומר את הפוליגון עם ה־id האמיתי
+            return { ...p, id: res.id };
           })
       );
 
-      // ערוכים
+      // Update edited polygons
       const savedEdited = await Promise.all(
         polygons
           .filter((p) => !p.id.startsWith("local-") && editedPolygons.has(p.id))
@@ -107,7 +102,7 @@ const PolygonPanel = ({
           })
       );
 
-      // עדכון state
+      // Update local state
       setPolygons((prev) => [
         ...prev.filter(
           (p) =>
@@ -119,7 +114,7 @@ const PolygonPanel = ({
         ...savedEdited,
       ]);
 
-      // reset
+      // Reset change tracking
       setEditedPolygons(new Set());
       setDeletedPolygons(new Set());
       previousPolygonsRef.current = polygons;
@@ -132,25 +127,22 @@ const PolygonPanel = ({
     }
   };
 
-  // פונקציה מרכזית לניהול מצבים - כל לחיצה מכבה את השאר
+  // Toggle between modes (mutually exclusive)
   const handleModeToggle = (mode: "draw" | "edit" | "delete") => {
-    // כבה את כל המצבים
     setIsDrawing(false);
     setIsEditing(false);
     setIsDeleting(false);
 
-    // הדלק רק את המצב הנבחר אם הוא לא כבר פעיל
     if (mode === "draw" && !isDrawing) setIsDrawing(true);
     if (mode === "edit" && !isEditing) setIsEditing(true);
     if (mode === "delete" && !isDeleting) setIsDeleting(true);
   };
 
+  // Calculate change counts
   const newCount = polygons.filter((p) => p.id.startsWith("local-")).length;
   const editedCount = editedPolygons.size;
   const deletedCount = deletedPolygons.size;
   const totalUnsaved = newCount + editedCount + deletedCount;
-
-  // בדיקה אם יש מצב פעיל כלשהו
   const hasActiveMode = isDrawing || isEditing || isDeleting;
 
   return (
@@ -159,32 +151,14 @@ const PolygonPanel = ({
         Polygons
       </Typography>
 
-      {saveStatus === "saving" && (
-        <Alert severity="info" className="pp-alert">
-          Saving...
-        </Alert>
-      )}
-      {saveStatus === "success" && (
-        <Alert severity="success" className="pp-alert">
-          Saved!
-        </Alert>
-      )}
-      {saveStatus === "error" && (
-        <Alert severity="error" className="pp-alert">
-          Error
-        </Alert>
-      )}
-      {isDeleting && (
-        <Alert severity="error" className="pp-alert">
-          Click polygon to delete
-        </Alert>
-      )}
-      {isEditing && (
-        <Alert severity="warning" className="pp-alert">
-          Edit Mode: Drag points to move
-        </Alert>
-      )}
+      {/* Status Alerts */}
+      {saveStatus === "saving" && <StatusAlert type="saving" message="Saving..." />}
+      {saveStatus === "success" && <StatusAlert type="success" message="Saved!" />}
+      {saveStatus === "error" && <StatusAlert type="error" message="Error" />}
+      {isDeleting && <StatusAlert type="error" message="Click polygon to delete" />}
+      {isEditing && <StatusAlert type="warning" message="Edit Mode: Drag points to move" />}
 
+      {/* Statistics Panel */}
       <Box className="pp-stats">
         <Typography variant="caption">Total: {polygons.length}</Typography>
         <Typography
@@ -218,57 +192,39 @@ const PolygonPanel = ({
         )}
       </Box>
 
+      {/* Control Buttons */}
       <Stack direction="row" spacing={0.3} className="pp-buttons">
-        <Button
-          variant={isDrawing ? "contained" : "outlined"}
-          color={isDrawing ? "warning" : "primary"}
-          size="small"
-          onClick={() => handleModeToggle("draw")}
+        <PolygonButton
+          mode="draw"
+          isActive={isDrawing}
           disabled={hasActiveMode && !isDrawing}
-          className="pp-btn"
-        >
-          {isDrawing ? "Stop Draw Mode" : "Draw Mode"}
-        </Button>
+          onClick={() => handleModeToggle("draw")}
+        />
 
-        <Button
-          variant={isEditing ? "contained" : "outlined"}
-          color={isEditing ? "warning" : "primary"}
-          size="small"
-          onClick={() => handleModeToggle("edit")}
+        <PolygonButton
+          mode="edit"
+          isActive={isEditing}
           disabled={hasActiveMode && !isEditing}
-          className="pp-btn"
-        >
-          {isEditing ? "Stop Edit Mode" : "Edit Mode"}
-        </Button>
+          onClick={() => handleModeToggle("edit")}
+        />
 
-        <Button
-          variant="contained"
-          color="success"
-          size="small"
-          onClick={handleSave}
+        <PolygonButton
+          mode="save"
           disabled={totalUnsaved === 0 || saveStatus === "saving"}
-          className="pp-btn"
-        >
-          Save ({totalUnsaved})
-        </Button>
+          count={totalUnsaved}
+          onClick={handleSave}
+        />
 
-        <Button
-          variant={isDeleting ? "contained" : "outlined"}
-          color={isDeleting ? "warning" : "error"}
-          size="small"
-          onClick={() => handleModeToggle("delete")}
+        <PolygonButton
+          mode="delete"
+          isActive={isDeleting}
           disabled={polygons.length === 0 || (hasActiveMode && !isDeleting)}
-          className="pp-btn"
-        >
-          {isDeleting ? "Cancel Delete Mode" : "Delete Mode"}
-        </Button>
+          onClick={() => handleModeToggle("delete")}
+        />
       </Stack>
 
-      {isDrawing && (
-        <Alert severity="info" className="pp-alert">
-          Click map to draw polygon
-        </Alert>
-      )}
+      {/* Drawing Instructions */}
+      {isDrawing && <StatusAlert type="info" message="Click map to draw polygon" />}
     </Paper>
   );
 };

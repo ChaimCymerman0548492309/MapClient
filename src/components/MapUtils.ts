@@ -75,7 +75,6 @@ export function closeRing(
   return coords;
 }
 
-// כדי להשתמש בהם יש להעביר את setX כפונקציות מבחוץ (לא ניגשים ל-state ישירות)
 export const handleFinishPolygon = (
   poly: any,
   setPolygons: React.Dispatch<React.SetStateAction<Polygon[]>>,
