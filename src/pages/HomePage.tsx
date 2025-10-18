@@ -1,20 +1,17 @@
-// HomePage.tsx
 import {
   //  Button, 
    Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import "../App.css";
 import MapDataTable from "../components/MapDataTable";
 import { closeRing } from "../components/MapUtils";
 import MapView from "../components/MapView";
 import ObjectsPanel from "../components/ObjectsPanel";
 import PolygonPanel from "../components/PolygonPanel";
-import { fetchObjects } from "../store/slices/objectsSlice";
-import { fetchPolygons } from "../store/slices/polygonsSlice";
-import type { AppDispatch, RootState } from "../store/store";
-import type { MapObject } from "../types/object.type";
-import type { Polygon } from "../types/polygon.type";
+import type { MapObject, MapObjectApiResponse } from "../types/object.type";
+import type { Polygon, PolygonApiResponse } from "../types/polygon.type";
+import { serverApi } from "../api/api";
+
 
 const HomePage = () => {
   const [polygons, setPolygons] = useState<Polygon[]>([]);
@@ -33,62 +30,40 @@ const HomePage = () => {
   const [isSelectingPolygon, 
     // setIsSelectingPolygon
   ] = useState(false);
-  const polygons2 = useSelector((state: RootState) => state.polygons.list);
-  const objects2 = useSelector((state: RootState) => state.objects.list);
 
-  const dispatch = useDispatch<AppDispatch>();
-useEffect(() => {
-  // 1️⃣ טען מהשרת רק בפעם הראשונה
-  dispatch(fetchPolygons());
-  dispatch(fetchObjects());
-}, [dispatch]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const polyRes: PolygonApiResponse[] = await serverApi.getPolygons();
+        setPolygons(
+          polyRes.map((p) => ({
+            id: p.id,
+            name: p.name,
+            coordinates: [
+              p.geometry.coordinates.exterior.positions.map((pos) => [
+                pos.values[0],
+                pos.values[1],
+              ]),
+            ],
+          }))
+        );
 
-// 2️⃣ האזן לשינויים בנתונים שמגיעים מהשרת בפעם הראשונה בלבד
-useEffect(() => {
-  if (polygons2.length > 0 && polygons.length === 0) {
-    setPolygons(polygons2);
-  }
-}, [polygons2]);
-
-useEffect(() => {
-  if (objects2.length > 0 && objects.length === 0) {
-    setObjects(objects2);
-  }
-}, [objects2]);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       const polyRes: PolygonApiResponse[] = await serverApi.getPolygons();
-  //       setPolygons(
-  //         polyRes.map((p) => ({
-  //           id: p.id,
-  //           name: p.name,
-  //           coordinates: [
-  //             p.geometry.coordinates.exterior.positions.map((pos) => [
-  //               pos.values[0],
-  //               pos.values[1],
-  //             ]),
-  //           ],
-  //         }))
-  //       );
-
-  //       const objRes: MapObjectApiResponse[] = await serverApi.getObjects();
-  //       setObjects(
-  //         objRes.map((o) => ({
-  //           id: o.id,
-  //           type: o.type,
-  //           coordinates: [
-  //             o.location.coordinates.longitude,
-  //             o.location.coordinates.latitude,
-  //           ],
-  //         }))
-  //       );
-  //     } catch (err) {
-  //       console.error("Error fetching data:", err);
-  //     }
-  //   })();
-  // }, []);
+        const objRes: MapObjectApiResponse[] = await serverApi.getObjects();
+        setObjects(
+          objRes.map((o) => ({
+            id: o.id,
+            type: o.type,
+            coordinates: [
+              o.location.coordinates.longitude,
+              o.location.coordinates.latitude,
+            ],
+          }))
+        );
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+    })();
+  }, []);
 
   return (
     <div className="hp-root">
