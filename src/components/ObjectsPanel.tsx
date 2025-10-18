@@ -25,6 +25,8 @@ type Props = {
   setIsDeletingObjects: (val: boolean) => void;
   deletedObjects: Set<string>;
   setDeletedObjects: React.Dispatch<React.SetStateAction<Set<string>>>;
+
+  
 };
 
 const ObjectsPanel = ({

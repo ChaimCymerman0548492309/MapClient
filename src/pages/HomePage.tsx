@@ -1,17 +1,25 @@
 import {
-  //  Button, 
-   Paper, Typography } from "@mui/material";
+  //  Button,
+  Paper,
+  Typography,
+} from "@mui/material";
 import { useEffect, useState } from "react";
+import { serverApi } from "../api/api";
 import "../App.css";
 import MapDataTable from "../components/MapDataTable";
-import { closeRing } from "../components/MapUtils";
 import MapView from "../components/MapView";
 import ObjectsPanel from "../components/ObjectsPanel";
 import PolygonPanel from "../components/PolygonPanel";
 import type { MapObject, MapObjectApiResponse } from "../types/object.type";
 import type { Polygon, PolygonApiResponse } from "../types/polygon.type";
-import { serverApi } from "../api/api";
+import {
 
+  handleFinishPolygon,
+  handleAddObject,
+  handleUpdatePolygon,
+  handleDeletePolygon,
+  handleDeleteObject,
+} from "../components/MapUtils";
 
 const HomePage = () => {
   const [polygons, setPolygons] = useState<Polygon[]>([]);
@@ -27,7 +35,8 @@ const HomePage = () => {
   );
   const [isDeletingObjects, setIsDeletingObjects] = useState(false);
   const [deletedObjects, setDeletedObjects] = useState<Set<string>>(new Set());
-  const [isSelectingPolygon, 
+  const [
+    isSelectingPolygon,
     // setIsSelectingPolygon
   ] = useState(false);
 
@@ -78,58 +87,29 @@ const HomePage = () => {
           </Typography>
           <div className="hp-map">
             <MapView
-              setObjects={setObjects}
               polygons={polygons}
               objects={objects}
+              setObjects={setObjects}
               isDrawing={isDrawing}
               isAddingObject={isAddingObject}
               objectType={objectType}
               isEditing={isEditing}
               isDeleting={isDeleting}
               isSelectingPolygon={isSelectingPolygon}
-              onFinishPolygon={(poly) => {
-                const ring: [number, number][] = poly.coordinates[0] as [
-                  number,
-                  number
-                ][];
-                const fixed = {
-                  ...poly,
-                  id: "local-" + crypto.randomUUID(), // תמיד ייחודי
-                  coordinates: [closeRing(ring)], // לוודא סגירה
-                };
-                setPolygons((prev) => [...prev, fixed]);
-                setIsDrawing(false);
-              }}
-              onAddObject={(obj) =>
-                setObjects((prev) => {
-                  if (prev.some((o) => o.id === obj.id)) return prev; // כבר קיים
-                  return [...prev, obj];
-                })
-              }
-              onUpdatePolygon={(polygonId, newRing: [number, number][]) => {
-                const fixedRing = closeRing(newRing);
-                setPolygons((prev) =>
-                  prev.map((poly) =>
-                    poly.id === polygonId
-                      ? { ...poly, coordinates: [fixedRing] }
-                      : poly
-                  )
-                );
-                setEditedPolygons((prev) => new Set(prev).add(polygonId));
-              }}
-              onDeletePolygon={(polygonId) => {
-                setPolygons((prev) => prev.filter((p) => p.id !== polygonId));
-                setDeletedPolygons((prev) => new Set(prev).add(polygonId));
-              }}
               isDeletingObjects={isDeletingObjects}
-              onDeleteObject={(id) => {
-                setObjects((prev) => prev.filter((o) => o.id !== id));
-                setDeletedObjects((prev) => {
-                  const next = new Set(prev);
-                  next.add(id);
-                  return next;
-                });
-              }}
+              onFinishPolygon={(poly) =>
+                handleFinishPolygon(poly, setPolygons, setIsDrawing)
+              }
+              onAddObject={(obj) => handleAddObject(obj, setObjects)}
+              onUpdatePolygon={(id, ring) =>
+                handleUpdatePolygon(id, ring, setPolygons, setEditedPolygons)
+              }
+              onDeletePolygon={(id) =>
+                handleDeletePolygon(id, setPolygons, setDeletedPolygons)
+              }
+              onDeleteObject={(id) =>
+                handleDeleteObject(id, setObjects, setDeletedObjects)
+              }
             />
           </div>
         </Paper>
