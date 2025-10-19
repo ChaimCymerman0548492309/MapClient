@@ -46,22 +46,22 @@ export const getEmojiForType = (type: string): string => {
   }
 };
 
-export const createMarkerElement = (
-  obj: MapObject,
-  emoji: string
-): HTMLDivElement => {
-  const el = document.createElement("div");
-  el.className = `custom-marker ${obj.type.toLowerCase()}`;
-  el.dataset.type = obj.type;
-  el.dataset.id = obj.id;
-  el.title = `${obj.type} (ID: ${obj.id})`;
-  el.innerHTML = `<div style="font-size:28px;line-height:1;cursor:pointer;">${emoji}</div>`;
-  el.onmouseenter = () =>
-    ((el.firstElementChild as HTMLElement).style.transform = "scale(1.1)");
-  el.onmouseleave = () =>
-    ((el.firstElementChild as HTMLElement).style.transform = "scale(1)");
-  return el;
-};
+// export const createMarkerElement = (
+//   obj: MapObject,
+//   emoji: string
+// ): HTMLDivElement => {
+//   const el = document.createElement("div");
+//   el.className = `custom-marker ${obj.type.toLowerCase()}`;
+//   el.dataset.type = obj.type;
+//   el.dataset.id = obj.id;
+//   el.title = `${obj.type} (ID: ${obj.id})`;
+//   el.innerHTML = `<div style="font-size:28px;line-height:1;cursor:pointer;">${emoji}</div>`;
+//   el.onmouseenter = () =>
+//     ((el.firstElementChild as HTMLElement).style.transform = "scale(1.1)");
+//   el.onmouseleave = () =>
+//     ((el.firstElementChild as HTMLElement).style.transform = "scale(1)");
+//   return el;
+// };
 
 export function closeRing(
   coords: Array<[number, number]>

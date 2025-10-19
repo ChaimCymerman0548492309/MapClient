@@ -1,38 +1,37 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Map } from "maplibre-gl";
+import { Map, } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo,  } from "react";
 import "../App.css";
 
-import { useMapDeleting } from "../hooks/useMapDeleting";
-import { useMapDrawing } from "../hooks/useMapDrawing";
-import { useMapEditing } from "../hooks/useMapEditing";
-import { useMapFeatures } from "../hooks/useMapFeatures";
-import { useMapObjects } from "../hooks/useMapObjects";
-import { usePolygonSelection } from "../hooks/usePolygonSelection";
+
 
 import { cleanupMap, initializeMap } from "./MapManager";
-
 import type { MapObject } from "../types/object.type";
 import type { Polygon } from "../types/polygon.type";
+import { useMapDrawing } from "../hooks/useMapDrawing";
+import { useMapEditing } from "../hooks/useMapEditing";
+import { useMapObjects } from "../hooks/useMapObjects";
+import { useMapDeleting } from "../hooks/useMapDeleting";
+import { useMapFeatures } from "../hooks/useMapFeatures";
+import { usePolygonSelection } from "../hooks/usePolygonSelection";
 
 type Props = {
   polygons: Polygon[];
   objects: MapObject[];
   isDrawing: boolean;
+  onFinishPolygon: (polygon: Polygon) => void;
+  onUpdatePolygon: (id: string, ring: [number, number][]) => void;
+  setObjects?: React.Dispatch<React.SetStateAction<MapObject[]>>;
+  onAddObject?: (obj: MapObject) => void;
+  onDeletePolygon?: (id: string) => void;
+  onDeleteObject?: (id: string) => void;
   isAddingObject?: boolean;
-  objectType?: string;
   isEditing?: boolean;
   isDeleting?: boolean;
-  onFinishPolygon: (polygon: Polygon) => void;
-  setObjects?: React.Dispatch<React.SetStateAction<MapObject[]>>;
-
-  onAddObject?: (obj: MapObject) => void;
-  onUpdatePolygon: (polygonId: string, newRing: [number, number][]) => void;
-  onDeletePolygon?: (id: string) => void;
   isDeletingObjects?: boolean;
   isSelectingPolygon?: boolean;
-  onDeleteObject?: (id: string) => void;
+  objectType?: string;
 };
 
 const MapView = ({
@@ -52,34 +51,21 @@ const MapView = ({
   isSelectingPolygon,
   setObjects,
 }: Props) => {
-  /** refs */
   const mapRef = useRef<Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  /** local state */
   const [ready, setReady] = useState(false);
 
-  /** initialize map */
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = initializeMap(containerRef.current, () => setReady(true));
-    mapRef.current = map;
-
+    mapRef.current = initializeMap(containerRef.current, () => setReady(true));
     return () => {
       cleanupMap(mapRef.current);
       mapRef.current = null;
     };
   }, []);
 
-  /** hooks */
   useMapDrawing({ mapRef, isDrawing, onFinishPolygon });
-  useMapEditing({
-    mapRef,
-    ready,
-    isEditing,
-    polygons,
-    onUpdatePolygon,
-  });
+  useMapEditing({ mapRef, ready, isEditing, polygons, onUpdatePolygon });
   useMapObjects({
     mapRef,
     ready,
@@ -103,26 +89,22 @@ const MapView = ({
   usePolygonSelection({
     mapRef,
     ready,
-    isSelecting: isSelectingPolygon || false,
+    isSelecting: !!isSelectingPolygon,
     polygons,
     objects,
-    onSelect: (polyId, inside) => {
-      console.log("Polygon clicked:", polyId, inside);
-      setObjects!((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id)));
-    },
+    onSelect: (_polyId, inside) =>
+      setObjects?.((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id))),
   });
 
-  /** cursor */
-  const getCursorClass = () => {
+  const cursorClass = useMemo(() => {
     if (isDrawing) return "cursor-draw";
     if (isAddingObject) return "cursor-add";
     if (isEditing) return "cursor-edit";
     return "cursor-grab";
-  };
+  }, [isDrawing, isAddingObject, isEditing]);
 
-  return (
-    <div ref={containerRef} className={`map-container ${getCursorClass()}`} />
-  );
+  return <div ref={containerRef} className={`map-container ${cursorClass}`} />;
 };
 
 export default MapView;
+

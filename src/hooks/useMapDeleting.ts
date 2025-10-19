@@ -1,12 +1,9 @@
-// hooks/useMapDeleting.ts
+/* ======================= useMapDeleting ======================= */
 import { useEffect } from "react";
-import type { Map } from "maplibre-gl";
+import type { Map, MapLayerMouseEvent } from "maplibre-gl";
 
-type Params = {
-  mapRef: React.MutableRefObject<Map | null>;
-  ready: boolean;
-  isDeleting?: boolean;
-  onDeletePolygon?: (id: string) => void;
+type PolygonFeatureEvent = MapLayerMouseEvent & {
+  features?: { geometry?: { type?: string }; properties?: { id?: string } }[];
 };
 
 export function useMapDeleting({
@@ -14,29 +11,34 @@ export function useMapDeleting({
   ready,
   isDeleting,
   onDeletePolygon,
-}: Params) {
+}: {
+  mapRef: React.MutableRefObject<Map | null>;
+  ready: boolean;
+  isDeleting?: boolean;
+  onDeletePolygon?: (id: string) => void;
+}) {
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready ||!mapRef.current) return;
+    if (!map || !ready) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handlePolygonDeleteClick = (e: any) => {
+    const handleClick = (e: PolygonFeatureEvent): void => {
       if (!isDeleting || !onDeletePolygon) return;
       const feature = e.features?.[0];
       if (feature?.geometry?.type === "Polygon") {
-        const polygonId = feature.properties?.id;
-        if (polygonId) onDeletePolygon(polygonId);
+        const id = feature.properties?.id;
+        if (id) onDeletePolygon(id);
       }
     };
 
     if (map.getLayer("polygons")) {
-      map.on("click", "polygons", handlePolygonDeleteClick);
+      map.on("click", "polygons", handleClick);
+      // cleanup function returning void
+      return () => {
+        if (map.getLayer("polygons")) map.off("click", "polygons", handleClick);
+      };
     }
 
-    return () => {
-      if (map.getLayer("polygons")) {
-        map.off("click", "polygons", handlePolygonDeleteClick);
-      }
-    };
+    // explicitly return void when no cleanup
+    return;
   }, [mapRef, ready, isDeleting, onDeletePolygon]);
 }

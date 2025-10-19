@@ -1,8 +1,8 @@
 // hooks/usePolygonSelection.ts
-import { useEffect } from "react";
 import type { Map } from "maplibre-gl";
-import type { Polygon } from "../types/polygon.type";
+import { useEffect } from "react";
 import type { MapObject } from "../types/object.type";
+import type { Polygon } from "../types/polygon.type";
 import { getObjectsInPolygon } from "../utils/getObjectsInPolygon";
 
 type Params = {
@@ -26,15 +26,17 @@ export function usePolygonSelection({
     const map = mapRef.current;
     if (!map || !ready || !isSelecting) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleClick = (e: any) => {
+    const handleClick = (e: maplibregl.MapLayerMouseEvent) => {
       const feature = e.features?.[0];
       if (feature?.geometry?.type === "Polygon") {
         const polyId = feature.properties?.id;
-        const poly = polygons.find(p => p.id === polyId);
+        const poly = polygons.find((p) => p.id === polyId);
         if (!poly) return;
 
-        const inside = getObjectsInPolygon(objects, poly.coordinates[0] as [number, number][]);
+        const inside = getObjectsInPolygon(
+          objects,
+          poly.coordinates[0] as [number, number][]
+        );
         onSelect(polyId, inside);
       }
     };

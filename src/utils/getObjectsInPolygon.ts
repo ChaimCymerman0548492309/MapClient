@@ -13,7 +13,7 @@ export function getObjectsInPolygon(
   polygonCoords: [number, number][]
 ): MapObject[] {
   // יוצר GeoJSON Polygon
-  const poly = polygon([polygonCoords]);
+  const poly  = polygon([polygonCoords]);
 
   // מסנן את האובייקטים
   return objects.filter(obj => {
