@@ -1,14 +1,4 @@
-// ObjectsPanel.tsx
-import {
-  Alert,
-  Box,
-  Button,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Alert,Box, Button,  MenuItem, Paper,  Select,Stack,Typography,} from "@mui/material";
 import { useState } from "react";
 import { serverApi } from "../api/api";
 import "../App.css";
@@ -18,15 +8,14 @@ type Props = {
   objects: MapObject[];
   setObjects: React.Dispatch<React.SetStateAction<MapObject[]>>;
   isAdding: boolean;
-  setIsAdding: (val: boolean) => void;
+  setIsAdding: (v: boolean) => void;
   objectType: string;
-  setObjectType: (val: string) => void;
+  setObjectType: (v: string) => void;
   isDeletingObjects: boolean;
-  setIsDeletingObjects: (val: boolean) => void;
+  setIsDeletingObjects: (v: boolean) => void;
   deletedObjects: Set<string>;
   setDeletedObjects: React.Dispatch<React.SetStateAction<Set<string>>>;
-
-  
+  disabled?: boolean; // 👈 prop יחיד לחסימה
 };
 
 const ObjectsPanel = ({
@@ -38,68 +27,65 @@ const ObjectsPanel = ({
   setObjectType,
   isDeletingObjects,
   setIsDeletingObjects,
-  setDeletedObjects,
   deletedObjects,
+  setDeletedObjects,
+  disabled = false,
 }: Props) => {
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "success" | "error"
   >("idle");
 
   const handleAddToggle = () => {
+    if (disabled) return;
     setIsAdding(!isAdding);
-    if (!isAdding) setIsDeletingObjects(false);
+    setIsDeletingObjects(false);
   };
 
-  const handleDeleteModeToggle = () => {
+  const handleDeleteToggle = () => {
+    if (disabled) return;
     setIsDeletingObjects(!isDeletingObjects);
-    if (!isDeletingObjects) setIsAdding(false);
+    setIsAdding(false);
   };
 
   const handleSave = async () => {
     try {
       setSaveStatus("saving");
 
-      // מחיקות לשרת
-      for (const id of deletedObjects) {
-        if (!id.startsWith("local-")) {
-          await serverApi.deleteObject(id);
-        }
-      }
+      await Promise.all(
+        [...deletedObjects]
+          .filter((id) => !id.startsWith("local-"))
+          .map((id) => serverApi.deleteObject(id))
+      );
 
-      // הוספת חדשים
-      const objectsToSave = objects.filter((o) => o.id.startsWith("local-"));
-      const savedObjects = await Promise.all(
-        objectsToSave.map((obj) =>
-          serverApi.addObject({ type: obj.type, coordinates: obj.coordinates })
+      const newObjs = objects.filter((o) => o.id.startsWith("local-"));
+      const saved = await Promise.all(
+        newObjs.map((o) =>
+          serverApi.addObject({ type: o.type, coordinates: o.coordinates })
         )
       );
 
-      // החלפת local- ב־id מהשרת לפי index
       setObjects((prev) => {
         const updated = prev.map((o) => {
           if (o.id.startsWith("local-")) {
-            const idx = objectsToSave.findIndex((lo) => lo.id === o.id);
-            return savedObjects[idx] ? { ...o, id: savedObjects[idx].id } : o;
+            const i = newObjs.findIndex((x) => x.id === o.id);
+            return saved[i] ? { ...o, id: saved[i].id } : o;
           }
           return o;
         });
-        // סינון כפולים לפי id
-        const unique = new Map(updated.map((o) => [o.id, o]));
-        return Array.from(unique.values());
+        return Array.from(new Map(updated.map((o) => [o.id, o])).values());
       });
 
       setDeletedObjects(new Set());
       setSaveStatus("success");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      setTimeout(() => setSaveStatus("idle"), 2000);
     } catch {
       setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      setTimeout(() => setSaveStatus("idle"), 2000);
     }
   };
 
-  const unsavedNew = objects.filter((o) => o.id.startsWith("local-")).length;
-  const pendingDeletes = deletedObjects.size;
-  const totalPending = unsavedNew + pendingDeletes;
+  const unsaved = objects.filter((o) => o.id.startsWith("local-")).length;
+  const pending = unsaved + deletedObjects.size;
 
   return (
     <Paper className="op-root" square>
@@ -107,47 +93,18 @@ const ObjectsPanel = ({
         🎯 Objects
       </Typography>
 
-      {saveStatus === "saving" && (
-        <Alert severity="info" className="op-alert">
-          Saving…
-        </Alert>
-      )}
-      {saveStatus === "success" && (
-        <Alert severity="success" className="op-alert">
-          Saved!
-        </Alert>
-      )}
-      {saveStatus === "error" && (
-        <Alert severity="error" className="op-alert">
-          Error
-        </Alert>
-      )}
+      {saveStatus === "saving" && <Alert severity="info">Saving…</Alert>}
+      {saveStatus === "success" && <Alert severity="success">Saved!</Alert>}
+      {saveStatus === "error" && <Alert severity="error">Error</Alert>}
 
       <Box className="op-stats">
-        <Typography variant="caption" className="op-stat">
-          📊 Total: {objects.length}
-        </Typography>
+        <Typography variant="caption">📊 Total: {objects.length}</Typography>
         <Typography
           variant="caption"
-          color={totalPending ? "warning.main" : "success.main"}
-          className="op-stat"
+          color={pending ? "warning.main" : "success.main"}
         >
-          💾 Pending: {totalPending}
+          💾 Pending: {pending}
         </Typography>
-        {isDeletingObjects && (
-          <Typography
-            variant="caption"
-            color="warning.main"
-            className="op-stat"
-          >
-            🗑 Click to remove
-          </Typography>
-        )}
-        {isAdding && (
-          <Typography variant="caption" color="info.main" className="op-stat">
-            ➕ Click map to add
-          </Typography>
-        )}
       </Box>
 
       <Select
@@ -155,61 +112,42 @@ const ObjectsPanel = ({
         size="small"
         value={objectType}
         onChange={(e) => setObjectType(e.target.value)}
-        disabled={isDeletingObjects}
-        className="op-select"
+        disabled={disabled || isDeletingObjects}
       >
-        <MenuItem value="Marker" className="op-option">
-          📍 Marker
-        </MenuItem>
-        <MenuItem value="Jeep" className="op-option">
-          🚙 Jeep
-        </MenuItem>
-        <MenuItem value="Ship" className="op-option">
-          🚢 Ship
-        </MenuItem>
-        <MenuItem value="Plane" className="op-option">
-          ✈️ Plane
-        </MenuItem>
-        <MenuItem value="Tree" className="op-option">
-          🌳 Tree
-        </MenuItem>
-        <MenuItem value="Building" className="op-option">
-          🏢 Building
-        </MenuItem>
+        <MenuItem value="Marker">📍 Marker</MenuItem>
+        <MenuItem value="Jeep">🚙 Jeep</MenuItem>
+        <MenuItem value="Ship">🚢 Ship</MenuItem>
+        <MenuItem value="Plane">✈️ Plane</MenuItem>
+        <MenuItem value="Tree">🌳 Tree</MenuItem>
+        <MenuItem value="Building">🏢 Building</MenuItem>
       </Select>
 
-      <Stack direction="row" spacing={0.5} className="op-buttons">
+      <Stack direction="row" spacing={0.5}>
         <Button
           variant={isAdding ? "contained" : "outlined"}
           color={isAdding ? "warning" : "primary"}
-          size="small"
           onClick={handleAddToggle}
-          disabled={isDeletingObjects}
-          className="op-btn"
+          disabled={disabled}
         >
-          {isAdding ? "Cancel Add Mode" : "Add Mode"}
+          {isAdding ? "Cancel Add" : "Add Mode"}
         </Button>
 
         <Button
           variant={isDeletingObjects ? "contained" : "outlined"}
           color="error"
-          size="small"
-          onClick={handleDeleteModeToggle}
-          disabled={objects.length === 0 || isAdding}
-          className="op-btn"
+          onClick={handleDeleteToggle}
+          disabled={disabled || !objects.length}
         >
-          {isDeletingObjects ? "Cancel Delete Mode" : "Delete Mode"}
+          {isDeletingObjects ? "Cancel Delete" : "Delete Mode"}
         </Button>
 
         <Button
           variant="contained"
           color="success"
-          size="small"
           onClick={handleSave}
-          disabled={totalPending === 0 || saveStatus === "saving"}
-          className="op-btn"
+          disabled={disabled || !pending || saveStatus === "saving"}
         >
-          {saveStatus === "saving" ? "..." : `Save (${totalPending})`}
+          {saveStatus === "saving" ? "..." : `Save (${pending})`}
         </Button>
       </Stack>
     </Paper>

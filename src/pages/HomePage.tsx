@@ -22,14 +22,17 @@ import {
 } from "../components/MapUtils";
 
 const HomePage = () => {
+  
   const [polygons, setPolygons] = useState<Polygon[]>([]);
   const [objects, setObjects] = useState<MapObject[]>([]);
+
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingObject, setIsAddingObject] = useState(false);
-  const [objectType, setObjectType] = useState("Marker");
-  const [editedPolygons, setEditedPolygons] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [objectType, setObjectType] = useState("Marker");
+
+  const [editedPolygons, setEditedPolygons] = useState<Set<string>>(new Set());
   const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(
     new Set()
   );
@@ -39,6 +42,7 @@ const HomePage = () => {
     isSelectingPolygon,
     // setIsSelectingPolygon
   ] = useState(false);
+
 
   useEffect(() => {
     (async () => {
@@ -130,6 +134,8 @@ const HomePage = () => {
             setIsDeleting={setIsDeleting}
             deletedPolygons={deletedPolygons}
             setDeletedPolygons={setDeletedPolygons}
+              disabled={isAddingObject || isDeletingObjects}
+
           />
         </Paper>
 
@@ -145,6 +151,8 @@ const HomePage = () => {
             setIsDeletingObjects={setIsDeletingObjects}
             deletedObjects={deletedObjects}
             setDeletedObjects={setDeletedObjects}
+              disabled={isDrawing || isEditing || isDeleting}
+
           />
         </Paper>
 
