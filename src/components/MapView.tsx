@@ -1,20 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Map, } from "maplibre-gl";
+import { Map } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef, useState, useMemo,  } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../App.css";
 
-
-
-import { cleanupMap, initializeMap } from "./MapManager";
-import type { MapObject } from "../types/object.type";
-import type { Polygon } from "../types/polygon.type";
+import { useMapDeleting } from "../hooks/useMapDeleting";
 import { useMapDrawing } from "../hooks/useMapDrawing";
 import { useMapEditing } from "../hooks/useMapEditing";
-import { useMapObjects } from "../hooks/useMapObjects";
-import { useMapDeleting } from "../hooks/useMapDeleting";
 import { useMapFeatures } from "../hooks/useMapFeatures";
+import { useMapObjects } from "../hooks/useMapObjects";
 import { usePolygonSelection } from "../hooks/usePolygonSelection";
+import type { MapObject } from "../types/object.type";
+import type { Polygon } from "../types/polygon.type";
+import { cleanupMap, initializeMap } from "./MapManager";
 
 type Props = {
   polygons: Polygon[];
@@ -89,24 +87,25 @@ const MapView = ({
   usePolygonSelection({
     mapRef,
     ready,
-    isSelecting: !!isSelectingPolygon ,
+    isSelecting: !!isSelectingPolygon,
     polygons,
     objects,
     onSelect: (_polyId, inside) => {
-    console.log("🚀 ~ MapView ~ inside:", inside)
-    return setObjects?.((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id)));
-},
+      console.log("🚀 ~ MapView ~ inside:", inside);
+      return setObjects?.((prev) =>
+        prev.filter((o) => !inside.some((i) => i.id === o.id))
+      );
+    },
   });
 
-  const cursorClass = useMemo(() => {
+  const cursorClass = () => {
     if (isDrawing) return "cursor-draw";
     if (isAddingObject) return "cursor-add";
     if (isEditing) return "cursor-edit";
     return "cursor-grab";
-  }, [isDrawing, isAddingObject, isEditing]);
+  };
 
-  return <div ref={containerRef} className={`map-container ${cursorClass}`} />;
+  return <div ref={containerRef} className={`map-container ${cursorClass()}`} />;
 };
 
 export default MapView;
-
