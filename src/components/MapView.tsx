@@ -89,11 +89,13 @@ const MapView = ({
   usePolygonSelection({
     mapRef,
     ready,
-    isSelecting: !!isSelectingPolygon,
+    isSelecting: !!isSelectingPolygon ,
     polygons,
     objects,
-    onSelect: (_polyId, inside) =>
-      setObjects?.((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id))),
+    onSelect: (_polyId, inside) => {
+    console.log("🚀 ~ MapView ~ inside:", inside)
+    return setObjects?.((prev) => prev.filter((o) => !inside.some((i) => i.id === o.id)));
+},
   });
 
   const cursorClass = useMemo(() => {
