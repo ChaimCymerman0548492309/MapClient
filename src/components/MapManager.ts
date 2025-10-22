@@ -6,10 +6,7 @@ import { closeRing } from "./MapUtils";
 /**
  * Initialize a new map with OSM tiles
  */
-export const initializeMap = (
-  container: HTMLDivElement,
-  onReady: () => void
-): Map => {
+export const initializeMap = (container: HTMLDivElement, onReady: () => void): Map => {
   const map = new Map({
     container,
     style: {
@@ -34,12 +31,7 @@ export const initializeMap = (
 /**
  * Create or update a GeoJSON layer
  */
-export const updateOrCreateLayer = (
-  map: Map,
-  id: string,
-  data: any,
-  layer: any
-): void => {
+export const updateOrCreateLayer = (map: Map, id: string, data: any, layer: any): void => {
   const source = map.getSource(id) as GeoJSONSource | undefined;
   if (source) {
     source.setData(data);
@@ -89,10 +81,7 @@ export const updatePolygonsLayer = (map: Map, polygons: any[]): void => {
 /**
  * Update drawing preview (polyline while drawing)
  */
-export const updateDrawingPreview = (
-  map: Map,
-  coords: [number, number][]
-): void => {
+export const updateDrawingPreview = (map: Map, coords: [number, number][]): void => {
   if (!coords.length) {
     removeLayer(map, "preview");
     return;
@@ -128,9 +117,7 @@ export const createObjectMarker = (
   el.innerHTML = getEmojiForType(object.type);
   el.className = "map-marker";
 
-  const marker = new Marker({ element: el })
-    .setLngLat(object.coordinates)
-    .addTo(map);
+  const marker = new Marker({ element: el }).setLngLat(object.coordinates).addTo(map);
 
   if (isDeleting && onDelete) {
     el.onclick = () => onDelete(object.id);
@@ -142,11 +129,7 @@ export const createObjectMarker = (
 /**
  * Create a small vertex marker for polygon editing
  */
-export const createVertexMarker = (
-  map: Map,
-  vertex: [number, number],
-  options?: { color?: string }
-): Marker => {
+export const createVertexMarker = (map: Map, vertex: [number, number], options?: { color?: string }): Marker => {
   const el = document.createElement("div");
   el.style.width = "10px";
   el.style.height = "10px";

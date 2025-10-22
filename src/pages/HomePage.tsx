@@ -7,22 +7,20 @@ import { useEffect, useState } from "react";
 import { serverApi } from "../api/api";
 import "../App.css";
 import MapDataTable from "../components/MapDataTable";
+import {
+  handleAddObject,
+  handleDeleteObject,
+  handleDeletePolygon,
+  handleFinishPolygon,
+  handleUpdatePolygon,
+} from "../components/MapUtils";
 import MapView from "../components/MapView";
 import ObjectsPanel from "../components/ObjectsPanel";
 import PolygonPanel from "../components/PolygonPanel";
 import type { MapObject, MapObjectApiResponse } from "../types/object.type";
 import type { Polygon, PolygonApiResponse } from "../types/polygon.type";
-import {
-
-  handleFinishPolygon,
-  handleAddObject,
-  handleUpdatePolygon,
-  handleDeletePolygon,
-  handleDeleteObject,
-} from "../components/MapUtils";
 
 const HomePage = () => {
-  
   const [polygons, setPolygons] = useState<Polygon[]>([]);
   const [objects, setObjects] = useState<MapObject[]>([]);
 
@@ -33,16 +31,13 @@ const HomePage = () => {
   const [objectType, setObjectType] = useState("Marker");
 
   const [editedPolygons, setEditedPolygons] = useState<Set<string>>(new Set());
-  const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(
-    new Set()
-  );
+  const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(new Set());
   const [isDeletingObjects, setIsDeletingObjects] = useState(false);
   const [deletedObjects, setDeletedObjects] = useState<Set<string>>(new Set());
   const [
     isSelectingPolygon,
     // setIsSelectingPolygon
   ] = useState(false);
-
 
   useEffect(() => {
     (async () => {
@@ -52,12 +47,7 @@ const HomePage = () => {
           polyRes.map((p) => ({
             id: p.id,
             name: p.name,
-            coordinates: [
-              p.geometry.coordinates.exterior.positions.map((pos) => [
-                pos.values[0],
-                pos.values[1],
-              ]),
-            ],
+            coordinates: [p.geometry.coordinates.exterior.positions.map((pos) => [pos.values[0], pos.values[1]])],
           }))
         );
 
@@ -66,10 +56,7 @@ const HomePage = () => {
           objRes.map((o) => ({
             id: o.id,
             type: o.type,
-            coordinates: [
-              o.location.coordinates.longitude,
-              o.location.coordinates.latitude,
-            ],
+            coordinates: [o.location.coordinates.longitude, o.location.coordinates.latitude],
           }))
         );
       } catch (err) {
@@ -101,19 +88,11 @@ const HomePage = () => {
               isDeleting={isDeleting}
               isSelectingPolygon={isSelectingPolygon}
               isDeletingObjects={isDeletingObjects}
-              onFinishPolygon={(poly) =>
-                handleFinishPolygon(poly, setPolygons, setIsDrawing)
-              }
+              onFinishPolygon={(poly) => handleFinishPolygon(poly, setPolygons, setIsDrawing)}
               onAddObject={(obj) => handleAddObject(obj, setObjects)}
-              onUpdatePolygon={(id, ring) =>
-                handleUpdatePolygon(id, ring, setPolygons, setEditedPolygons)
-              }
-              onDeletePolygon={(id) =>
-                handleDeletePolygon(id, setPolygons, setDeletedPolygons)
-              }
-              onDeleteObject={(id) =>
-                handleDeleteObject(id, setObjects, setDeletedObjects)
-              }
+              onUpdatePolygon={(id, ring) => handleUpdatePolygon(id, ring, setPolygons, setEditedPolygons)}
+              onDeletePolygon={(id) => handleDeletePolygon(id, setPolygons, setDeletedPolygons)}
+              onDeleteObject={(id) => handleDeleteObject(id, setObjects, setDeletedObjects)}
             />
           </div>
         </Paper>
@@ -134,8 +113,7 @@ const HomePage = () => {
             setIsDeleting={setIsDeleting}
             deletedPolygons={deletedPolygons}
             setDeletedPolygons={setDeletedPolygons}
-              disabled={isAddingObject || isDeletingObjects}
-
+            disabled={isAddingObject || isDeletingObjects}
           />
         </Paper>
 
@@ -151,18 +129,12 @@ const HomePage = () => {
             setIsDeletingObjects={setIsDeletingObjects}
             deletedObjects={deletedObjects}
             setDeletedObjects={setDeletedObjects}
-              disabled={isDrawing || isEditing || isDeleting}
-
+            disabled={isDrawing || isEditing || isDeleting}
           />
         </Paper>
 
         <Paper className="hp-data" square>
-          <MapDataTable
-            polygons={polygons}
-            objects={objects}
-            setObjects={setObjects}
-            setPolygons={setPolygons}
-          />
+          <MapDataTable polygons={polygons} objects={objects} setObjects={setObjects} setPolygons={setPolygons} />
         </Paper>
       </div>
     </div>

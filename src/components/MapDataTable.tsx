@@ -12,77 +12,45 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
+import { point, polygon } from "@turf/helpers";
 import { serverApi } from "../api/api";
 import "../App.css";
 import type { MapObject } from "../types/object.type";
 import type { Polygon } from "../types/polygon.type";
-import booleanPointInPolygon from "@turf/boolean-point-in-polygon";
-import { point, polygon } from "@turf/helpers";
 
 type Props = {
   polygons: Polygon[];
   objects: MapObject[];
-  setPolygons: React.Dispatch<
-    React.SetStateAction<Polygon[]>
-  >;
-  setObjects: React.Dispatch<
-    React.SetStateAction<MapObject[]>
-  >;
+  setPolygons: React.Dispatch<React.SetStateAction<Polygon[]>>;
+  setObjects: React.Dispatch<React.SetStateAction<MapObject[]>>;
 };
 
-const MapDataTable = ({
-  polygons,
-  objects,
-  setPolygons,
-  setObjects,
-}: Props) => {
-  const truncateText = (
-    text: string,
-    maxLength = 15
-  ) =>
-    text.length <= maxLength
-      ? text
-      : text.substring(0, maxLength) + "...";
+const MapDataTable = ({ polygons, objects, setPolygons, setObjects }: Props) => {
+  const truncateText = (text: string, maxLength = 15) =>
+    text.length <= maxLength ? text : text.substring(0, maxLength) + "...";
 
-  const handleDeleteObject = async (
-    id: string
-  ) => {
+  const handleDeleteObject = async (id: string) => {
     try {
       await serverApi.deleteObject(id);
-      setObjects((prev) =>
-        prev.filter((o) => o.id !== id)
-      );
+      setObjects((prev) => prev.filter((o) => o.id !== id));
     } catch (err) {
-      console.error(
-        "Error deleting object:",
-        err
-      );
+      console.error("Error deleting object:", err);
     }
   };
 
-  const handleDeletePolygon = async (
-    id: string
-  ) => {
+  const handleDeletePolygon = async (id: string) => {
     try {
       await serverApi.deletePolygon(id);
-      setPolygons((prev) =>
-        prev.filter((p) => p.id !== id)
-      );
+      setPolygons((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
-      console.error(
-        "Error deleting polygon:",
-        err
-      );
+      console.error("Error deleting polygon:", err);
     }
   };
 
   return (
     <Box className="mdt-root">
-      <Typography
-        variant="h6"
-        gutterBottom
-        className="mdt-title"
-      >
+      <Typography variant="h6" gutterBottom className="mdt-title">
         📊 Map Data
       </Typography>
 
@@ -90,66 +58,32 @@ const MapDataTable = ({
         <Table size="small" className="mdt-table">
           <TableHead>
             <TableRow className="mdt-header">
-              <TableCell className="mdt-th">
-                Name/ID
-              </TableCell>
-              <TableCell className="mdt-th">
-                Lat
-              </TableCell>
-              <TableCell className="mdt-th">
-                Lon
-              </TableCell>
-              <TableCell className="mdt-th">
-                Actions
-              </TableCell>
-              <TableCell className="mdt-th">
-                Actions
-              </TableCell>
+              <TableCell className="mdt-th">Name/ID</TableCell>
+              <TableCell className="mdt-th">Lat</TableCell>
+              <TableCell className="mdt-th">Lon</TableCell>
+              <TableCell className="mdt-th">Actions</TableCell>
+              <Tooltip title={truncateText("inside Polygon")}>
+                <TableCell className="mdt-th">inside Polygon</TableCell>
+              </Tooltip>
             </TableRow>
           </TableHead>
 
           <TableBody>
             {objects.map((object) => (
-              <TableRow
-                key={`object-${object.id}`}
-                className="mdt-row"
-              >
+              <TableRow key={`object-${object.id}`} className="mdt-row">
                 <TableCell className="mdt-mono">
-                  <Tooltip
-                    title={object.id}
-                    arrow
-                  >
-                    <span>
-                      {truncateText(
-                        object.id,
-                        12
-                      )}
-                    </span>
+                  <Tooltip title={object.id} arrow>
+                    <span>{truncateText(object.id, 12)}</span>
                   </Tooltip>
                 </TableCell>
+                <TableCell>{object.coordinates[1]?.toFixed(4)}</TableCell>
+                <TableCell>{object.coordinates[0]?.toFixed(4)}</TableCell>
                 <TableCell>
-                  {object.coordinates[1]?.toFixed(
-                    4
-                  )}
-                </TableCell>
-                <TableCell>
-                  {object.coordinates[0]?.toFixed(
-                    4
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Tooltip
-                    title="Delete object"
-                    arrow
-                  >
+                  <Tooltip title="Delete object" arrow>
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() =>
-                        handleDeleteObject(
-                          object.id
-                        )
-                      }
+                      onClick={() => handleDeleteObject(object.id)}
                       className="mdt-delete-btn"
                     >
                       <Delete fontSize="small" />
@@ -157,11 +91,11 @@ const MapDataTable = ({
                   </Tooltip>
                 </TableCell>
                 <TableCell>
-                  <Tooltip
-                    title="Delete object"
-                    arrow
-                  >
-                    <>{polygons.some((p) => booleanPointInPolygon(point(object.coordinates), polygon(p.coordinates))) ? '📍 Inside Polygon' : '—'}
+                  <Tooltip title="Delete object" arrow>
+                    <>
+                      {polygons.some((p) => booleanPointInPolygon(point(object.coordinates), polygon(p.coordinates)))
+                        ? "✔"
+                        : "✘"}
                     </>
                   </Tooltip>
                 </TableCell>
@@ -169,59 +103,29 @@ const MapDataTable = ({
             ))}
 
             {polygons.map((polygon, index) => (
-              <TableRow
-                key={`polygon-${polygon.id}-${index}`}
-                className="mdt-row"
-              >
+              <TableRow key={`polygon-${polygon.id}-${index}`} className="mdt-row">
                 <TableCell>
-                  <Chip
-                    label="Polygon"
-                    size="small"
-                    color="secondary"
-                    variant="outlined"
-                    className="mdt-chip"
-                  />
+                  <Chip label="Polygon" size="small" color="secondary" variant="outlined" className="mdt-chip" />
                 </TableCell>
                 <TableCell className="mdt-mono">
-                  <Tooltip
-                    title={
-                      polygon.name || polygon.id
-                    }
-                    arrow
-                  >
-                    <span>
-                      {truncateText(
-                        polygon.name ||
-                          polygon.id,
-                        12
-                      )}
-                    </span>
+                  <Tooltip title={polygon.name || polygon.id} arrow>
+                    <span>{truncateText(polygon.name || polygon.id, 12)}</span>
                   </Tooltip>
                 </TableCell>
                 <TableCell colSpan={2}>
                   <Chip
-                    label={`${
-                      polygon?.coordinates?.[0]
-                        ?.length || 0
-                    } pts`}
+                    label={`${polygon?.coordinates?.[0]?.length || 0} pts`}
                     size="small"
                     variant="filled"
                     className="mdt-chip-count"
                   />
                 </TableCell>
                 <TableCell>
-                  <Tooltip
-                    title="Delete polygon"
-                    arrow
-                  >
+                  <Tooltip title="Delete polygon" arrow>
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() =>
-                        handleDeletePolygon(
-                          polygon.id
-                        )
-                      }
+                      onClick={() => handleDeletePolygon(polygon.id)}
                       className="mdt-delete-btn"
                     >
                       <Delete fontSize="small" />
@@ -231,28 +135,18 @@ const MapDataTable = ({
               </TableRow>
             ))}
 
-            {objects.length === 0 &&
-              polygons.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    align="center"
-                    className="mdt-empty"
-                  >
-                    <Box className="mdt-empty-box">
-                      <span className="mdt-empty-icon">
-                        📭
-                      </span>
-                      <Typography
-                        variant="body2"
-                        className="mdt-empty-text"
-                      >
-                        No data available
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              )}
+            {objects.length === 0 && polygons.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} align="center" className="mdt-empty">
+                  <Box className="mdt-empty-box">
+                    <span className="mdt-empty-icon">📭</span>
+                    <Typography variant="body2" className="mdt-empty-text">
+                      No data available
+                    </Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </Box>
