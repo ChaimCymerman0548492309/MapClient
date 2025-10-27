@@ -62,3 +62,55 @@
 .map-container.cursor-add .maplibregl-canvas { cursor: copy; }
 .map-container.cursor-edit .maplibregl-canvas { cursor: move; }
 .map-container.cursor-grab .maplibregl-canvas { cursor: grab; }
+/* Weather Popup Global Styles */
+.maplibregl-popup.weather-popup {
+  background: transparent !important;
+}
+
+.maplibregl-popup.weather-popup .maplibregl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+}
+
+.maplibregl-popup.weather-popup .maplibregl-popup-tip {
+  border-top-color: rgba(25, 118, 210, 0.9) !important;
+  display: block !important;
+}
+
+/* Custom Weather Popup */
+.weather-popup-custom .maplibregl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.custom-weather-popup {
+  position: relative;
+}
+
+.custom-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #666;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+
+.custom-close-btn:hover {
+  background: white;
+  color: #1976d2;
+  transform: scale(1.1);
+}

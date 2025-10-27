@@ -2,8 +2,8 @@ import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import { serverApi } from "../api/api";
 import "../App.css";
-import type { Polygon } from "../types/polygon.type";
 import { PolygonButton, StatusAlert } from "../style/PolygonButton";
+import type { Polygon } from "../types/polygon.type";
 
 type Props = {
   polygons: Polygon[];
@@ -36,9 +36,7 @@ const PolygonPanel = ({
   setDeletedPolygons,
   disabled = false,
 }: Props) => {
-  const [saveStatus, setSaveStatus] = useState<
-    "idle" | "saving" | "success" | "error"
-  >("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
   const prevPolygons = useRef<Polygon[]>([]);
 
   useEffect(() => {
@@ -49,10 +47,7 @@ const PolygonPanel = ({
     const newEdited = new Set(editedPolygons);
     polygons.forEach((poly) => {
       const prev = prevPolygons.current.find((p) => p.id === poly.id);
-      if (
-        prev &&
-        JSON.stringify(poly.coordinates) !== JSON.stringify(prev.coordinates)
-      ) {
+      if (prev && JSON.stringify(poly.coordinates) !== JSON.stringify(prev.coordinates)) {
         newEdited.add(poly.id);
       }
     });
@@ -65,9 +60,7 @@ const PolygonPanel = ({
       setSaveStatus("saving");
 
       await Promise.all(
-        [...deletedPolygons]
-          .filter((id) => !id.startsWith("local-"))
-          .map((id) => serverApi.deletePolygon(id))
+        [...deletedPolygons].filter((id) => !id.startsWith("local-")).map((id) => serverApi.deletePolygon(id))
       );
 
       const newPolys = await Promise.all(
@@ -96,12 +89,7 @@ const PolygonPanel = ({
       );
 
       setPolygons((prev) => [
-        ...prev.filter(
-          (p) =>
-            !p.id.startsWith("local-") &&
-            !editedPolygons.has(p.id) &&
-            !deletedPolygons.has(p.id)
-        ),
+        ...prev.filter((p) => !p.id.startsWith("local-") && !editedPolygons.has(p.id) && !deletedPolygons.has(p.id)),
         ...newPolys,
         ...edited,
       ]);
@@ -124,8 +112,7 @@ const PolygonPanel = ({
   };
 
   const newCount = polygons.filter((p) => p.id.startsWith("local-")).length;
-  const totalUnsaved =
-    newCount + editedPolygons.size + deletedPolygons.size;
+  const totalUnsaved = newCount + editedPolygons.size + deletedPolygons.size;
 
   return (
     <Paper className="pp-root" square>
@@ -133,54 +120,28 @@ const PolygonPanel = ({
         Polygons
       </Typography>
 
-      {saveStatus === "saving" && (
-        <StatusAlert type="saving" message="Saving..." />
-      )}
-      {saveStatus === "success" && (
-        <StatusAlert type="success" message="Saved!" />
-      )}
-      {saveStatus === "error" && (
-        <StatusAlert type="error" message="Error saving" />
-      )}
+      {saveStatus === "saving" && <StatusAlert type="saving" message="Saving..." />}
+      {saveStatus === "success" && <StatusAlert type="success" message="Saved!" />}
+      {saveStatus === "error" && <StatusAlert type="error" message="Error saving" />}
 
       <Box className="pp-stats">
         <Typography variant="caption">Total: {polygons.length}</Typography>
-        <Typography
-          variant="caption"
-          color={totalUnsaved ? "warning.main" : "success.main"}
-        >
+        <Typography variant="caption" color={totalUnsaved ? "warning.main" : "success.main"}>
           Unsaved: {totalUnsaved}
         </Typography>
-        {isEditing && (
-          <Chip label="EDIT MODE" color="warning" size="small" />
-        )}
+        {isEditing && <Chip label="EDIT MODE" color="warning" size="small" />}
       </Box>
 
       <Stack direction="row" spacing={0.3}>
-        <PolygonButton
-          mode="draw"
-          isActive={isDrawing}
-          disabled={disabled}
-          onClick={() => toggle("draw")}
-        />
-        <PolygonButton
-          mode="edit"
-          isActive={isEditing}
-          disabled={disabled}
-          onClick={() => toggle("edit")}
-        />
+        <PolygonButton mode="draw" isActive={isDrawing} disabled={disabled} onClick={() => toggle("draw")} />
+        <PolygonButton mode="edit" isActive={isEditing} disabled={disabled} onClick={() => toggle("edit")} />
         <PolygonButton
           mode="save"
           disabled={disabled || totalUnsaved === 0}
           count={totalUnsaved}
           onClick={handleSave}
         />
-        <PolygonButton
-          mode="delete"
-          isActive={isDeleting}
-          disabled={disabled}
-          onClick={() => toggle("delete")}
-        />
+        <PolygonButton mode="delete" isActive={isDeleting} disabled={disabled} onClick={() => toggle("delete")} />
       </Stack>
     </Paper>
   );
