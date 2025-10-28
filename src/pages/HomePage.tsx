@@ -1,24 +1,25 @@
 import {
+  Button,
   //  Button,
   Paper,
   Typography,
-} from "@mui/material";
-import { useEffect, useState } from "react";
-import { serverApi } from "../api/api";
-import "../App.css";
-import MapDataTable from "../components/MapDataTable";
+} from '@mui/material';
+import { useEffect, useState } from 'react';
+import { serverApi } from '../api/api';
+import '../App.css';
+import MapDataTable from '../components/MapDataTable';
 import {
   handleAddObject,
   handleDeleteObject,
   handleDeletePolygon,
   handleFinishPolygon,
   handleUpdatePolygon,
-} from "../components/MapUtils";
-import MapView from "../components/MapView";
-import ObjectsPanel from "../components/ObjectsPanel";
-import PolygonPanel from "../components/PolygonPanel";
-import type { MapObject, MapObjectApiResponse } from "../types/object.type";
-import type { Polygon, PolygonApiResponse } from "../types/polygon.type";
+} from '../components/MapUtils';
+import MapView from '../components/MapView';
+import ObjectsPanel from '../components/ObjectsPanel';
+import PolygonPanel from '../components/PolygonPanel';
+import type { MapObject, MapObjectApiResponse } from '../types/object.type';
+import type { Polygon, PolygonApiResponse } from '../types/polygon.type';
 
 const HomePage = () => {
   const [polygons, setPolygons] = useState<Polygon[]>([]);
@@ -28,7 +29,7 @@ const HomePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingObject, setIsAddingObject] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [objectType, setObjectType] = useState("Marker");
+  const [objectType, setObjectType] = useState('Marker');
 
   const [editedPolygons, setEditedPolygons] = useState<Set<string>>(new Set());
   const [deletedPolygons, setDeletedPolygons] = useState<Set<string>>(new Set());
@@ -36,7 +37,7 @@ const HomePage = () => {
   const [deletedObjects, setDeletedObjects] = useState<Set<string>>(new Set());
   const [
     isSelectingPolygon,
-    // setIsSelectingPolygon
+    setIsSelectingPolygon
   ] = useState(false);
 
   useEffect(() => {
@@ -48,7 +49,7 @@ const HomePage = () => {
             id: p.id,
             name: p.name,
             coordinates: [p.geometry.coordinates.exterior.positions.map((pos) => [pos.values[0], pos.values[1]])],
-          }))
+          })),
         );
 
         const objRes: MapObjectApiResponse[] = await serverApi.getObjects();
@@ -57,10 +58,10 @@ const HomePage = () => {
             id: o.id,
             type: o.type,
             coordinates: [o.location.coordinates.longitude, o.location.coordinates.latitude],
-          }))
+          })),
         );
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error('Error fetching data:', err);
       }
     })();
   }, []);
@@ -68,9 +69,9 @@ const HomePage = () => {
   return (
     <div className="hp-root">
       <div className="hp-left">
-        {/* <Button onClick={() => setIsSelectingPolygon((prev) => !prev)}>
+        <Button onClick={() => setIsSelectingPolygon((prev) => !prev)}>
           {isSelectingPolygon ? "בטל בחירה" : "בחר פוליגון"}
-        </Button> */}
+        </Button>
 
         <Paper className="hp-paper" square>
           <Typography variant="h6" className="hp-header">
