@@ -57,12 +57,10 @@ export const useWeatherForecast = ({
     url.searchParams.set('forecast_days', '7');
     url.searchParams.set('timezone', 'auto');
 
-    console.log('Fetching weather from:', url.toString());
 
     const res = await fetch(url.toString());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    console.log('Weather data received:', json.daily);
     return json.daily as DailyForecast;
   };
 
@@ -93,7 +91,6 @@ export const useWeatherForecast = ({
     }
 
     const ring = polygon.coordinates[0].map((coord) => [coord[0], coord[1]] as [number, number]);
-    console.log('Converted ring from coordinates:', ring);
     return ring;
   }, []);
 
@@ -187,7 +184,6 @@ export const useWeatherForecast = ({
     const lastPolygon = polygons[polygons.length - 1];
     if (!lastPolygon || lastPolygon.id === lastPolygonId) return;
 
-    console.log('New polygon detected:', lastPolygon);
 
     // עדכן את ID האחרון
     setLastPolygonId(lastPolygon.id);
@@ -201,7 +197,6 @@ export const useWeatherForecast = ({
     }
 
     const [lng, lat] = centroidOfRing(ring);
-    console.log('Calculated centroid:', lng, lat);
 
     fetchAndShowWeather([lng, lat]);
   }, [ready, polygons, lastPolygonId, getRingFromPolygon, centroidOfRing, fetchAndShowWeather]);

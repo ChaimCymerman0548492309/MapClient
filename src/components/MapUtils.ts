@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { polygon } from "@turf/helpers";
+import centerOfMass from "@turf/center-of-mass";
+import type { LocationInfo } from "../types/LocationInfo";
 import type { MapObject } from "../types/object.type";
 import type { Polygon } from "../types/polygon.type";
 
@@ -63,9 +66,7 @@ export const getEmojiForType = (type: string): string => {
 //   return el;
 // };
 
-export function closeRing(
-  coords: Array<[number, number]>
-): Array<[number, number]> {
+export function closeRing(coords: Array<[number, number]>): Array<[number, number]> {
   if (coords.length === 0) return coords;
   const [first] = coords;
   const last = coords[coords.length - 1];
@@ -92,10 +93,8 @@ export const handleFinishPolygon = (
   setIsDrawing(false);
 };
 
-export const handleAddObject = (
-  obj: MapObject,
-  setObjects: React.Dispatch<React.SetStateAction<MapObject[]>>
-) => setObjects((p) => (p.some((o) => o.id === obj.id) ? p : [...p, obj]));
+export const handleAddObject = (obj: MapObject, setObjects: React.Dispatch<React.SetStateAction<MapObject[]>>) =>
+  setObjects((p) => (p.some((o) => o.id === obj.id) ? p : [...p, obj]));
 
 export const handleUpdatePolygon = (
   polygonId: string,
@@ -104,11 +103,7 @@ export const handleUpdatePolygon = (
   setEditedPolygons: React.Dispatch<React.SetStateAction<Set<string>>>
 ) => {
   const fixed = closeRing(newRing);
-  setPolygons((p) =>
-    p.map((poly) =>
-      poly.id === polygonId ? { ...poly, coordinates: [fixed] } : poly
-    )
-  );
+  setPolygons((p) => p.map((poly) => (poly.id === polygonId ? { ...poly, coordinates: [fixed] } : poly)));
   setEditedPolygons((s) => new Set(s).add(polygonId));
 };
 
@@ -128,4 +123,41 @@ export const handleDeleteObject = (
 ) => {
   setObjects((p) => p.filter((o) => o.id !== id));
   setDeletedObjects((s) => new Set(s).add(id));
+};
+
+export const fetchLocationName = async (lat: number, lng: number): Promise<string | null> => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=he`
+    );
+    const data: LocationInfo = await response.json();
+
+    if (!data || !data.address) return null;
+
+    const { address } = data;
+    return (
+      address.city ||
+      address.town ||
+      address.village ||
+      address.county ||
+      address.state ||
+      address.country ||
+      data.display_name || 'unknown location'
+    );
+  } catch (error) {
+    console.error("Error fetching location:", error);
+    return null;
+  }
+};
+
+export const showPolygonLocation = async (poly: Polygon) => {
+  if (!poly.coordinates?.[0]?.length) return;
+
+  const turfPolygon = polygon([poly.coordinates[0]]);
+  const center = centerOfMass(turfPolygon);
+  const [lng, lat] = center.geometry.coordinates;
+
+  const name = await fetchLocationName(lat, lng);
+  console.log(`Polygon "${poly.name}" is near: ${name}`);
+  return name;
 };

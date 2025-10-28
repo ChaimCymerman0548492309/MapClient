@@ -14,6 +14,7 @@ import type { MapObject } from "../types/object.type";
 import type { Polygon } from "../types/polygon.type";
 import { cleanupMap, initializeMap } from "./MapManager";
 import { useWeatherForecast } from "./useWeather/useWeatherForecast";
+import { WeatherControls } from "./useWeather/WeatherControls";
 import { WeatherPopup } from "./useWeather/WeatherPopup/WeatherPopup";
 // import { WeatherPopup } from "./useWeather/WeatherPopup";
 
@@ -187,96 +188,13 @@ const MapView = ({
         anchorEl={popupAnchor}
       />
       {/* ✅ כפתורים להפעלת תחזית */}
-      <div
-        style={{
-          position: "absolute",
-          top: "10px",
-          right: "10px",
-          zIndex: 1000,
-          display: "flex",
-          flexDirection: "column",
-          gap: "5px",
-        }}
-      >
-        <button
-          onClick={toggleWeatherMode}
-          style={{
-            padding: "8px 12px",
-            backgroundColor: weatherMode ? "#4CAF50" : "#2196F3",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "12px",
-          }}
-        >
-          {weatherMode ? "❌ כבה תחזית" : "🌤️ תחזית בלחיצה"}
-        </button>
-
-        <button
-          onClick={showWeatherForLastPolygon}
-          style={{
-            padding: "8px 12px",
-            backgroundColor: "#FF9800",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            fontSize: "12px",
-          }}
-        >
-          📍 תחזית לפוליגון אחרון
-        </button>
-
-        {/* ✅ כפתורים לכל הפוליגונים */}
-        {polygons.length > 0 && (
-          <div
-            style={{
-              backgroundColor: "rgba(255,255,255,0.9)",
-              padding: "8px",
-              borderRadius: "4px",
-              maxHeight: "200px",
-              overflowY: "auto",
-            }}
-          >
-            <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "5px" }}>תחזית לפוליגון:</div>
-            {polygons.map((polygon) => (
-              <button
-                key={polygon.id}
-                onClick={() => showWeatherForPolygon(polygon.id)}
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#9C27B0",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "3px",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  margin: "2px",
-                  width: "100%",
-                  textAlign: "right",
-                }}
-              >
-                {polygon.name || `פוליגון ${polygon.id.slice(0, 6)}`}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {weatherMode && (
-          <div
-            style={{
-              backgroundColor: "rgba(255,255,255,0.9)",
-              padding: "8px",
-              borderRadius: "4px",
-              fontSize: "12px",
-              textAlign: "center",
-            }}
-          >
-            🎯 לחץ על המפה לתחזית
-          </div>
-        )}
-      </div>
+      <WeatherControls
+        weatherMode={weatherMode}
+        toggleWeatherMode={toggleWeatherMode}
+        showWeatherForLastPolygon={showWeatherForLastPolygon}
+        polygons={polygons}
+        showWeatherForPolygon={showWeatherForPolygon}
+      />
     </div>
   );
 };
