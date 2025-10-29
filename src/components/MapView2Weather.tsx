@@ -235,13 +235,13 @@ useEffect(() => {
         anchorEl={popupAnchor}
       />
       {/* ✅ כפתורים להפעלת תחזית */}
-      {/* <WeatherControls
+      <WeatherControls
         weatherMode={weatherMode}
         toggleWeatherMode={toggleWeatherMode}
         // showWeatherForLastPolygon={showWeatherForLastPolygon}
         polygons={polygons}
         showWeatherForPolygon={showWeatherForPolygon}
-      /> */}
+      />
     </div>
   );
 };

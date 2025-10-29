@@ -22,7 +22,7 @@ export const initializeMap = (container: HTMLDivElement, onReady: () => void): M
       layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
     },
     center: [34.78, 32.07],
-    zoom: 12,
+    zoom: 14,
   });
 
   map.once('load', () => onReady?.());
