@@ -59,8 +59,7 @@ const MapView = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 
-  // ✅ מערך כתובות לדוגמה (עד 10 כתובות)
-  const addresses: string[] = ['קניון עופר, פתח תקווה, ישראל', 'מגדלי עזריאלי, תל אביב, ישראל', 'נמל תל אביב, ישראל'];
+
 
   // --- Weather Forecast Hook ---
   const {
@@ -99,76 +98,7 @@ const MapView = ({
     };
   }, []);
 
-useEffect(() => {
-  if (!ready || !mapRef.current) return;
 
-  const routeSourceId = 'route';
-
-  const loadRoute = async () => {
-    try {
-      // 1. מיקום נוכחי
-      const startCoord: [number, number] = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve([pos.coords.longitude, pos.coords.latitude]),
-          (err) => reject(err),
-        );
-      });
-
-      const coords: [number, number][] = [startCoord];
-
-      // 2. גיאוקודינג כתובות
-      for (const address of addresses) {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.[0]) {
-          coords.push([parseFloat(data[0].lon), parseFloat(data[0].lat)]);
-        }
-      }
-
-      if (coords.length < 2) return;
-
-      // 3. קריאה ל־OSRM
-      const coordsQuery = coords.map((c) => c.join(',')).join(';');
-      const routeUrl = `https://router.project-osrm.org/route/v1/driving/${coordsQuery}?overview=full&geometries=geojson`;
-      const res = await fetch(routeUrl);
-      const routeData = await res.json();
-      if (!routeData.routes?.length) return;
-
-      const routeFeature: GeoJSON.Feature<GeoJSON.LineString> = {
-        type: 'Feature',
-        geometry: routeData.routes[0].geometry,
-        properties: {},
-      };
-
-      // 4. יצירת מקור ושכבה
-      const map = mapRef.current;
-      if (!map) return;
-      const source = map.getSource(routeSourceId) as maplibregl.GeoJSONSource | undefined;
-
-      if (source) {
-        source.setData(routeFeature);
-      } else {
-        map.addSource(routeSourceId, { type: 'geojson', data: routeFeature });
-        map.addLayer({
-          id: 'route-layer',
-          type: 'line',
-          source: routeSourceId,
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#3b9ddd', 'line-width': 5 },
-        });
-      }
-
-      // 5. התאמת תצוגה
-      const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
-      map.fitBounds(bounds, { padding: 50 });
-    } catch (e) {
-      console.error('Error loading route:', e);
-    }
-  };
-
-  loadRoute();
-}, [ready]);
 
 
   // --- hooks you already use ---
@@ -235,13 +165,13 @@ useEffect(() => {
         anchorEl={popupAnchor}
       />
       {/* ✅ כפתורים להפעלת תחזית */}
-      {/* <WeatherControls
+      <WeatherControls
         weatherMode={weatherMode}
         toggleWeatherMode={toggleWeatherMode}
         // showWeatherForLastPolygon={showWeatherForLastPolygon}
         polygons={polygons}
         showWeatherForPolygon={showWeatherForPolygon}
-      /> */}
+      />
     </div>
   );
 };
