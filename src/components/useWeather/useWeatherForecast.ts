@@ -158,48 +158,48 @@ export const useWeatherForecast = ({
     [polygons, getRingFromPolygon, centroidOfRing, fetchAndShowWeather]
   );
 
-  // ✅ הצגת תחזית לפוליגון האחרון
-  const showWeatherForLastPolygon = useCallback(() => {
-    if (polygons.length === 0) {
-      alert('אין פוליגונים להצגת תחזית');
-      return;
-    }
+  // // ✅ הצגת תחזית לפוליגון האחרון
+  // const showWeatherForLastPolygon = useCallback(() => {
+  //   if (polygons.length === 0) {
+  //     alert('אין פוליגונים להצגת תחזית');
+  //     return;
+  //   }
 
-    const lastPolygon = polygons[polygons.length - 1];
-    const ring = getRingFromPolygon(lastPolygon);
+  //   const lastPolygon = polygons[polygons.length - 1];
+  //   const ring = getRingFromPolygon(lastPolygon);
 
-    if (!ring || ring.length < 3) {
-      alert('פוליגון לא תקין');
-      return;
-    }
+  //   if (!ring || ring.length < 3) {
+  //     alert('פוליגון לא תקין');
+  //     return;
+  //   }
 
-    const [lng, lat] = centroidOfRing(ring);
-    fetchAndShowWeather([lng, lat]);
-  }, [polygons, getRingFromPolygon, centroidOfRing, fetchAndShowWeather]);
+  //   const [lng, lat] = centroidOfRing(ring);
+  //   fetchAndShowWeather([lng, lat]);
+  // }, [polygons, getRingFromPolygon, centroidOfRing, fetchAndShowWeather]);
 
-  // ✅ בדיקה אם נוסף פוליגון חדש והצגת תחזית אוטומטית
-  const checkForNewPolygon = useCallback(() => {
-    if (!ready || polygons.length === 0) return;
+  // // ✅ בדיקה אם נוסף פוליגון חדש והצגת תחזית אוטומטית
+  // const checkForNewPolygon = useCallback(() => {
+  //   if (!ready || polygons.length === 0) return;
 
-    const lastPolygon = polygons[polygons.length - 1];
-    if (!lastPolygon || lastPolygon.id === lastPolygonId) return;
+  //   const lastPolygon = polygons[polygons.length - 1];
+  //   if (!lastPolygon || lastPolygon.id === lastPolygonId) return;
 
 
-    // עדכן את ID האחרון
-    setLastPolygonId(lastPolygon.id);
+  //   // עדכן את ID האחרון
+  //   setLastPolygonId(lastPolygon.id);
 
-    // קבל את הקואורדינטות מהפוליגון בפורמט הנכון
-    const ring = getRingFromPolygon(lastPolygon);
+  //   // קבל את הקואורדינטות מהפוליגון בפורמט הנכון
+  //   const ring = getRingFromPolygon(lastPolygon);
 
-    if (!ring || ring.length < 3) {
-      console.warn('Invalid ring coordinates:', ring);
-      return;
-    }
+  //   if (!ring || ring.length < 3) {
+  //     console.warn('Invalid ring coordinates:', ring);
+  //     return;
+  //   }
 
-    const [lng, lat] = centroidOfRing(ring);
+  //   const [lng, lat] = centroidOfRing(ring);
 
-    fetchAndShowWeather([lng, lat]);
-  }, [ready, polygons, lastPolygonId, getRingFromPolygon, centroidOfRing, fetchAndShowWeather]);
+  //   fetchAndShowWeather([lng, lat]);
+  // }, [ready, polygons, lastPolygonId, getRingFromPolygon, centroidOfRing, fetchAndShowWeather]);
 
   return {
     loadingWx,
@@ -209,9 +209,9 @@ export const useWeatherForecast = ({
     popupData,
     toggleWeatherMode,
     showWeatherForPolygon,
-    showWeatherForLastPolygon,
+    // showWeatherForLastPolygon,
     fetchAndShowWeather,
-    checkForNewPolygon,
+    // checkForNewPolygon,
     closePopup,
   };
 };

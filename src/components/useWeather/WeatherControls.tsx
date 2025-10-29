@@ -1,13 +1,13 @@
-import { centerOfMass } from "@turf/center-of-mass";
-import { polygon } from "@turf/helpers";
-import React, { useEffect, useState } from "react";
-import type { Polygon } from "../../types/polygon.type";
-import { fetchLocationName } from "../MapUtils";
+import { centerOfMass } from '@turf/center-of-mass';
+import { polygon } from '@turf/helpers';
+import React, { useEffect, useState } from 'react';
+import type { Polygon } from '../../types/polygon.type';
+import { fetchLocationName } from '../MapUtils';
 
 interface WeatherControlsProps {
   weatherMode: boolean;
   toggleWeatherMode: () => void;
-  showWeatherForLastPolygon: () => void;
+  // showWeatherForLastPolygon: () => void;
   polygons: Polygon[];
   showWeatherForPolygon: (id: string) => void;
 }
@@ -15,7 +15,7 @@ interface WeatherControlsProps {
 export const WeatherControls: React.FC<WeatherControlsProps> = ({
   weatherMode,
   toggleWeatherMode,
-  showWeatherForLastPolygon,
+  // showWeatherForLastPolygon,
   polygons,
   showWeatherForPolygon,
 }) => {
@@ -55,31 +55,29 @@ export const WeatherControls: React.FC<WeatherControlsProps> = ({
   return (
     <div
       style={{
-        position: "absolute",
-        top: "10px",
-        right: "10px",
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
         zIndex: 1000,
-        display: "flex",
-        flexDirection: "column",
-        gap: "5px",
-      }}
-    >
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '5px',
+      }}>
       <button
         onClick={toggleWeatherMode}
         style={{
-          padding: "8px 12px",
-          backgroundColor: weatherMode ? "#4CAF50" : "#2196F3",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: "pointer",
-          fontSize: "12px",
-        }}
-      >
-        {weatherMode ? "❌ כבה תחזית" : "🌤️ תחזית בלחיצה"}
+          padding: '8px 12px',
+          backgroundColor: weatherMode ? '#4CAF50' : '#2196F3',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '12px',
+        }}>
+        {weatherMode ? '❌ כבה תחזית' : '🌤️ תחזית בלחיצה'}
       </button>
 
-      <button
+      {/* <button
         onClick={showWeatherForLastPolygon}
         style={{
           padding: "8px 12px",
@@ -92,52 +90,46 @@ export const WeatherControls: React.FC<WeatherControlsProps> = ({
         }}
       >
         📍 תחזית לאזור אחרון
-      </button>
+      </button> */}
 
       {polygons.length > 0 && (
         <div
           style={{
-            backgroundColor: "rgba(255,255,255,0.9)",
-            padding: "8px",
-            borderRadius: "4px",
-            maxHeight: "200px",
-            overflowY: "auto",
-          }}
-        >
-          <div style={{ fontSize: "12px", fontWeight: "bold", marginBottom: "5px" }}>תחזית לאזור:</div>
-          {polygons.map((poly) => (
-            <button
-              key={poly.id}
-              onClick={() => showWeatherForPolygon(poly.id)}
-              style={{
-                padding: "4px 8px",
-                backgroundColor: "#9C27B0",
-                color: "white",
-                border: "none",
-                borderRadius: "3px",
-                cursor: "pointer",
-                fontSize: "11px",
-                margin: "2px",
-                width: "100%",
-                textAlign: "right",
-              }}
-            >
-              {polygonNames[poly.id]|| `אזור ${poly.id.slice(0, 6)}`}
-            </button>
-          ))}
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            padding: '8px',
+            borderRadius: '4px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+          }}>
+          <div style={{ display: 'grid', gap: '4px', width: '200px' }}>
+            {polygons.map((poly) => (
+              <button
+                key={poly.id}
+                onClick={() => showWeatherForPolygon(poly.id)}
+                style={{
+                  background: '#9C27B0',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '3px',
+                  padding: '4px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                }}>
+                {polygonNames[poly.id] || `אזור ${poly.id.slice(0, 6)}`}
+              </button>
+            ))}
+          </div>
         </div>
       )}
-
       {weatherMode && (
         <div
           style={{
-            backgroundColor: "rgba(255,255,255,0.9)",
-            padding: "8px",
-            borderRadius: "4px",
-            fontSize: "12px",
-            textAlign: "center",
-          }}
-        >
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            padding: '8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            textAlign: 'center',
+          }}>
           🎯 לחץ על המפה לתחזית
         </div>
       )}

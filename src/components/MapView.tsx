@@ -1,22 +1,22 @@
-import * as maplibregl from "maplibre-gl";
-import { Map } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef, useState } from "react";
-import "../App.css";
+import * as maplibregl from 'maplibre-gl';
+import { Map } from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { useEffect, useRef, useState } from 'react';
+import '../App.css';
 
-import { useMapDeleting } from "../hooks/useMapDeleting";
-import { useMapDrawing } from "../hooks/useMapDrawing";
-import { useMapEditing } from "../hooks/useMapEditing";
-import { useMapFeatures } from "../hooks/useMapFeatures";
-import { useMapObjects } from "../hooks/useMapObjects";
-import { usePolygonSelection } from "../hooks/usePolygonSelection";
-import type { MapObject } from "../types/object.type";
-import type { Polygon } from "../types/polygon.type";
-import { cleanupMap, initializeMap } from "./MapManager";
-import { useWeatherForecast } from "./useWeather/useWeatherForecast";
-import { WeatherControls } from "./useWeather/WeatherControls";
-import { WeatherPopup } from "./useWeather/WeatherPopup/WeatherPopup";
-// import { WeatherPopup } from "./useWeather/WeatherPopup";
+import { useMapDeleting } from '../hooks/useMapDeleting';
+import { useMapDrawing } from '../hooks/useMapDrawing';
+import { useMapEditing } from '../hooks/useMapEditing';
+import { useMapFeatures } from '../hooks/useMapFeatures';
+import { useMapObjects } from '../hooks/useMapObjects';
+import { usePolygonSelection } from '../hooks/usePolygonSelection';
+import type { MapObject } from '../types/object.type';
+import type { Polygon } from '../types/polygon.type';
+import { cleanupMap, initializeMap } from './MapManager';
+import { useWeatherForecast } from './useWeather/useWeatherForecast';
+import { WeatherControls } from './useWeather/WeatherControls';
+import { WeatherPopup } from './useWeather/WeatherPopup/WeatherPopup';
+import { useWeatherOnMap } from './useWeather/useWeatherOnMap';
 
 type Props = {
   polygons: Polygon[];
@@ -57,17 +57,16 @@ const MapView = ({
   const mapRef = useRef<Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
-  // בתוך ה-MapView component
-  const [popupAnchor, setPopupAnchor] = useState<Element | null>(null);
+
 
   // --- Weather Forecast Hook ---
   const {
     weatherMode,
     toggleWeatherMode,
     showWeatherForPolygon,
-    showWeatherForLastPolygon,
+    // showWeatherForLastPolygon,
     fetchAndShowWeather,
-    checkForNewPolygon,
+    // checkForNewPolygon,
     popupOpen,
     popupData,
     closePopup,
@@ -78,6 +77,15 @@ const MapView = ({
     polygons,
     ready,
   });
+  const { popupAnchor, setPopupAnchor } = useWeatherOnMap({
+    mapRef,
+    ready,
+    polygons,
+    weatherMode,
+    fetchAndShowWeather,
+    // checkForNewPolygon,
+  });
+
 
   // --- init / cleanup map ---
   useEffect(() => {
@@ -123,53 +131,19 @@ const MapView = ({
     },
   });
 
-  // --- Weather click listener ---
-  useEffect(() => {
-    if (!ready || !mapRef.current || !weatherMode) return;
-
-    const map = mapRef.current;
-
-    // בתוך ה-useEffect של weather click listener
-    const handleMapClick = (e: maplibregl.MapMouseEvent) => {
-      if (!weatherMode) return;
-
-      const { lng, lat } = e.lngLat;
-
-      // יצירת element זמני כ-anchor
-      const fakeAnchor = document.createElement("div");
-      fakeAnchor.style.position = "absolute";
-      fakeAnchor.style.left = `${e.point.x}px`;
-      fakeAnchor.style.top = `${e.point.y}px`;
-      document.body.appendChild(fakeAnchor);
-
-      setPopupAnchor(fakeAnchor);
-      fetchAndShowWeather([lng, lat]);
-    };
-
-    map.on("click", handleMapClick);
-
-    return () => {
-      map.off("click", handleMapClick);
-    };
-  }, [ready, weatherMode, fetchAndShowWeather]);
-
-  // --- Auto weather for new polygons ---
-  useEffect(() => {
-    checkForNewPolygon();
-  }, [polygons, ready, checkForNewPolygon]);
 
   // --- helpers ---
   const cursorClass = () => {
-    if (weatherMode) return "cursor-weather";
-    if (isDrawing) return "cursor-draw";
-    if (isAddingObject) return "cursor-add";
-    if (isEditing) return "cursor-edit";
-    if (isDeleting) return "cursor-delete";
-    return "cursor-grab";
+    if (weatherMode) return 'cursor-weather';
+    if (isDrawing) return 'cursor-draw';
+    if (isAddingObject) return 'cursor-add';
+    if (isEditing) return 'cursor-edit';
+    if (isDeleting) return 'cursor-delete';
+    return 'cursor-grab';
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} className={`map-container ${cursorClass()}`} />
       {/* ✅ Weather Popup של MUI */}
       <WeatherPopup
@@ -191,7 +165,7 @@ const MapView = ({
       <WeatherControls
         weatherMode={weatherMode}
         toggleWeatherMode={toggleWeatherMode}
-        showWeatherForLastPolygon={showWeatherForLastPolygon}
+        // showWeatherForLastPolygon={showWeatherForLastPolygon}
         polygons={polygons}
         showWeatherForPolygon={showWeatherForPolygon}
       />
